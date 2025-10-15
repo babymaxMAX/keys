@@ -1,4 +1,4 @@
-// Service Worker: отдаёт текст подписки по /sub?id=N (text/plain), чтобы iOS могла импортировать.
+// Service Worker: /sub?id=N -> text/plain с N-й строкой профиля (1..300).
 const RAW = `vless://2bb4e43d-9913-470b-8ab9-eca875f65072@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-matras_raskladnoi_05_1%2F2year
 vless://31d554e4-e996-4bff-8a61-2856638c76ea@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-6g61ojxfmatras_raskladnoi_05_1%2F2year1
 vless://716e1287-ed12-4407-bb43-683723a8f297@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-472y5f35matras_raskladnoi_05_1%2F2year2
@@ -310,12 +310,16 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.pathname === '/sub') {
     const id = parseInt(url.searchParams.get('id'), 10);
-    let body = '';
-    if (Number.isFinite(id) && id >= 1 && id <= LIST.length) {
-      body = LIST[id - 1].trim() + '\n';
-    } else {
-      return event.respondWith(new Response('invalid id\n', { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }));
+    if (!Number.isFinite(id) || id < 1 || id > LIST.length) {
+      return event.respondWith(new Response('invalid id\n', {
+        status: 400,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }
+      }));
     }
-    return event.respondWith(new Response(body, { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } }));
+    const body = (LIST[id - 1] || '').trim() + '\n';
+    return event.respondWith(new Response(body, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }
+    }));
   }
 });
