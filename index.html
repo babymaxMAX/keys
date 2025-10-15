@@ -22,27 +22,37 @@
 
   <div id="actions" class="hidden">
     <p id="err" class="err"></p>
+
+    <div id="waHint" class="hidden muted row">
+      Открой ссылку во внешнем браузере (кнопка ниже), иначе мессенджер может блокировать автопереход.
+      <div class="row">
+        <a id="openExternal" class="btn secondary" href="#" rel="noopener">Открыть в браузере</a>
+      </div>
+    </div>
+
     <div id="androidBlock" class="hidden row">
-      <a id="openNg" class="btn" href="#">Открыть в v2rayNG/v2rayTun</a>
-      <a id="openIntent" class="btn secondary" href="#" style="margin-left:8px;">Через intent</a>
+      <a id="openNg" class="btn" href="#" rel="noopener">Открыть в v2rayNG/v2rayTun</a>
+      <a id="openIntent" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Через intent</a>
     </div>
 
     <div id="iosBlock" class="hidden row">
-      <a id="openSR" class="btn" href="#">Открыть в Shadowrocket</a>
-      <a id="openStash" class="btn secondary" href="#" style="margin-left:8px;">Открыть в Stash</a>
-      <p class="muted" style="margin-top:10px">Если не открылось — приложение установится из App Store автоматически.</p>
+      <a id="openSR" class="btn" href="#" rel="noopener">Открыть в Shadowrocket</a>
+      <a id="openStash" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Открыть в Stash</a>
+      <p class="muted" style="margin-top:10px">Если приложение не установлено — откроется App Store автоматически.</p>
     </div>
 
     <div id="genericBlock" class="row">
-      <p class="muted">Ссылка подписки (откроется на iOS/или скопируйте):</p>
+      <p class="muted">Ссылка подписки (для iOS или как запасной вариант):</p>
       <p><a id="subLink" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
       <p class="muted">Адрес: <code id="subText"></code></p>
     </div>
   </div>
 
   <script>
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const ua = navigator.userAgent || "";
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isWhatsApp = /WhatsApp/i.test(ua);
 
     function getId(){
       const id = parseInt(new URLSearchParams(location.search).get('id'), 10);
@@ -53,9 +63,7 @@
       if(!('serviceWorker' in navigator)) return;
       try{
         await navigator.serviceWorker.register('/sw.js', {scope:'/'});
-        if(!navigator.serviceWorker.controller){
-          await new Promise(r=>setTimeout(r, 200));
-        }
+        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r, 200));
       }catch(e){}
     }
 
@@ -65,26 +73,31 @@
       return (await r.text()).trim();
     }
 
+    // Android deep links
     function v2rayngLink(vless){ return 'v2rayng://install-config?url='+encodeURIComponent(vless); }
     function androidIntent(vless){
       const qs='install-config?url='+encodeURIComponent(vless);
       return 'intent://'+qs+'#Intent;scheme=v2rayng;package=com.v2ray.ang;end';
     }
 
+    // iOS deep links + store fallbacks
     function shadowrocketLink(subUrl, remark){
       let u = 'shadowrocket://add/sub?url='+encodeURIComponent(subUrl);
       if(remark) u += '&remark='+encodeURIComponent(remark);
       return u;
     }
-    function stashLink(subUrl){
-      // Stash (iOS) импорт подписки
-      return 'stash://install-config?url='+encodeURIComponent(subUrl);
-    }
-    function toAppStoreShadowrocket(){
-      return 'https://apps.apple.com/app/id932747118';
-    }
-    function toAppStoreStash(){
-      return 'https://apps.apple.com/app/id1596063349';
+    function stashLink(subUrl){ return 'stash://install-config?url='+encodeURIComponent(subUrl); }
+    function appStoreShadowrocket(){ return 'https://apps.apple.com/app/id932747118'; }
+    function appStoreStash(){ return 'https://apps.apple.com/app/id1596063349'; }
+
+    function tryOpenWithStoreFallback(schemeUrl, storeUrl){
+      // Стратегия: клик -> пробуем открыть схему; если страница не «ушла в фон» (visibility), через 1200 мс уводим в Store
+      let fired = false;
+      const onVis = () => { if (document.visibilityState === 'hidden') { fired = true; clearTimeout(t); document.removeEventListener('visibilitychange', onVis); } };
+      document.addEventListener('visibilitychange', onVis, { once:false });
+
+      const t = setTimeout(()=>{ if(!fired) location.href = storeUrl; }, 1200);
+      try { location.href = schemeUrl; } catch(e){}
     }
 
     (async function main(){
@@ -95,6 +108,8 @@
       const iosBlock = document.getElementById('iosBlock');
       const subLink = document.getElementById('subLink');
       const subText = document.getElementById('subText');
+      const waHint = document.getElementById('waHint');
+      const openExternal = document.getElementById('openExternal');
 
       const id = getId();
       if(!id){ status.textContent='Нужен параметр ?id=1..300'; actions.classList.remove('hidden'); errEl.textContent='Параметр ?id= отсутствует.'; return; }
@@ -117,6 +132,11 @@
       actions.classList.remove('hidden');
       document.getElementById('genericBlock').classList.remove('hidden');
 
+      if(isWhatsApp){
+        waHint.classList.remove('hidden');
+        openExternal.addEventListener('click', (ev)=>{ ev.preventDefault(); window.open(location.href, '_blank'); });
+      }
+
       if(isAndroid){
         const deep = v2rayngLink(vless);
         const intent = androidIntent(vless);
@@ -125,11 +145,14 @@
         document.getElementById('openNg').href = deep;
         document.getElementById('openIntent').href = intent;
 
-        // Автопереход (часто блокируется во встройке WhatsApp — поэтому и кнопки есть)
-        try{ location.replace(deep); }catch(e){}
-        const meta = document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+deep; document.head.appendChild(meta);
-
-        status.textContent='Если не открылось автоматически — нажмите синюю кнопку.';
+        // Автозапуск (может блокироваться во встроенном браузере — поэтому есть кнопки)
+        if(!isWhatsApp){
+          try{ location.replace(deep); }catch(e){}
+          const meta = document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+deep; document.head.appendChild(meta);
+          status.textContent='Если не открылось автоматически — нажмите синюю кнопку.';
+        } else {
+          status.textContent='Нажми «Открыть в браузере», затем «Открыть в v2rayNG/v2rayTun».';
+        }
         return;
       }
 
@@ -138,30 +161,16 @@
         const sr = shadowrocketLink(subUrl, 'keys-'+String(id));
         const st = stashLink(subUrl);
 
-        const openSR = document.getElementById('openSR');
-        const openStash = document.getElementById('openStash');
+        document.getElementById('openSR').addEventListener('click', (ev)=>{ ev.preventDefault(); tryOpenWithStoreFallback(sr, appStoreShadowrocket()); });
+        document.getElementById('openStash').addEventListener('click', (ev)=>{ ev.preventDefault(); tryOpenWithStoreFallback(st, appStoreStash()); });
 
-        openSR.addEventListener('click', (ev)=>{
-          ev.preventDefault();
-          let opened = false;
-          const t = setTimeout(()=>{ if(!opened) location.href = toAppStoreShadowrocket(); }, 1200);
-          try{ location.href = sr; opened = true; }catch(e){}
-          // на случай блокировки схемы — показать ссылку подписки
-        });
-
-        openStash.addEventListener('click', (ev)=>{
-          ev.preventDefault();
-          let opened = false;
-          const t = setTimeout(()=>{ if(!opened) location.href = toAppStoreStash(); }, 1200);
-          try{ location.href = st; opened = true; }catch(e){}
-        });
-
-        status.textContent='Нажмите «Открыть в Shadowrocket». Если не установлено — откроется App Store.';
+        status.textContent = isWhatsApp
+          ? 'Нажми «Открыть в браузере», затем «Открыть в Shadowrocket».'
+          : 'Нажми «Открыть в Shadowrocket».';
         return;
       }
 
-      // Desktop/прочее
-      status.textContent='Откройте ссылку подписки на телефоне или скопируйте конфиг.';
+      status.textContent='Открой ссылку подписки на телефоне или скопируй конфиг.';
     })();
   </script>
 </body>
