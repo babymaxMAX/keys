@@ -2,11 +2,11 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Авто‑импорт профиля</title>
+  <title>v2rayTun авто‑импорт</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding:24px;max-width:880px;margin:0 auto}
-    h1{font-size:28px;margin:0 0 12px}
+    h1{font-size:24px;margin:0 0 12px}
     .muted{color:#555}
     .hidden{display:none}
     .err{color:#b00020}
@@ -14,37 +14,47 @@
     a.btn.secondary{background:#5f6368}
     code{background:#f6f8fa;padding:0 4px;border-radius:4px}
     .row{margin-top:16px}
+    ul{margin:8px 0 0 18px}
   </style>
 </head>
 <body>
-  <h1>Авто‑импорт профиля</h1>
+  <h1>Авто‑импорт в v2rayTun</h1>
   <p id="status" class="muted">Готовим перенаправление…</p>
 
   <div id="actions" class="hidden">
     <p id="err" class="err"></p>
 
     <div id="waHint" class="hidden muted row">
-      Открой ссылку во внешнем браузере (кнопка ниже), иначе мессенджер может блокировать автопереход.
+      Если открыто из WhatsApp/встроенного браузера — нажми «Открыть в браузере», затем «Открыть v2rayTun».
       <div class="row">
         <a id="openExternal" class="btn secondary" href="#" rel="noopener">Открыть в браузере</a>
       </div>
     </div>
 
-    <div id="androidBlock" class="hidden row">
-      <a id="openNg" class="btn" href="#" rel="noopener">Открыть в v2rayNG/v2rayTun</a>
-      <a id="openIntent" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Через intent</a>
+    <div id="runBlock" class="hidden row">
+      <a id="openPrimary" class="btn" href="#" rel="noopener">Открыть v2rayTun</a>
+      <a id="openAlt" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Альтернатива</a>
+      <div class="muted" style="margin-top:10px">
+        Если не открылось, попробуй альтернативные кнопки ниже или «Открыть в браузере».
+      </div>
     </div>
 
-    <div id="iosBlock" class="hidden row">
-      <a id="openSR" class="btn" href="#" rel="noopener">Открыть в Shadowrocket</a>
-      <a id="openStash" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Открыть в Stash</a>
-      <p class="muted" style="margin-top:10px">Если приложение не установлено — откроется App Store автоматически.</p>
+    <div id="altBlock" class="hidden row">
+      <p class="muted">Альтернативные ссылки запуска:</p>
+      <ul id="altList"></ul>
     </div>
 
-    <div id="genericBlock" class="row">
-      <p class="muted">Ссылка подписки (для iOS или как запасной вариант):</p>
+    <div id="fallbackBlock" class="row">
+      <p class="muted">Запасной вариант — подписка (импорт внутри приложения):</p>
       <p><a id="subLink" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
       <p class="muted">Адрес: <code id="subText"></code></p>
+      <p class="muted">Либо скопируй сам конфиг (длинная строка):</p>
+      <p><a id="copyBtn" class="btn secondary" href="#">Скопировать VLESS</a></p>
+      <p id="copied" class="muted hidden">Скопировано.</p>
+    </div>
+
+    <div id="deskHint" class="row hidden">
+      <p class="muted">Эту ссылку лучше открывать на телефоне с установленным v2rayTun.</p>
     </div>
   </div>
 
@@ -52,11 +62,12 @@
     const ua = navigator.userAgent || "";
     const isAndroid = /Android/i.test(ua);
     const isIOS = /iPhone|iPad|iPod/i.test(ua);
-    const isWhatsApp = /WhatsApp/i.test(ua);
+    const isWhatsApp = /WhatsApp|Line|FBAN|FBAV|Instagram|VKClient/i.test(ua);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
 
     function getId(){
-      const id = parseInt(new URLSearchParams(location.search).get('id'), 10);
-      return Number.isFinite(id) ? id : null;
+      const n = parseInt(new URLSearchParams(location.search).get('id'), 10);
+      return Number.isFinite(n) ? n : null;
     }
 
     async function ensureSW(){
@@ -66,50 +77,62 @@
         if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r, 200));
       }catch(e){}
     }
-
     async function getVLESS(id){
       const r = await fetch('/sub?id='+id, {cache:'no-store'});
       if(!r.ok) throw new Error('sub '+r.status);
       return (await r.text()).trim();
     }
 
-    // Android deep links
-    function v2rayngLink(vless){ return 'v2rayng://install-config?url='+encodeURIComponent(vless); }
-    function androidIntent(vless){
-      const qs='install-config?url='+encodeURIComponent(vless);
-      return 'intent://'+qs+'#Intent;scheme=v2rayng;package=com.v2ray.ang;end';
+    // Кандидаты deep‑link схем для v2rayTun (встречаются разные сборки)
+    function buildCandidates(vless){
+      return [
+        // 1) Самые частые:
+        {label:'v2rayTun install-config', url:'v2raytun://install-config?url='+encodeURIComponent(vless)},
+        {label:'v2rayTun import',         url:'v2raytun://import?url='+encodeURIComponent(vless)},
+        // 2) Совместимые схемы v2rayNG (часть сборок v2rayTun их ловит)
+        {label:'v2rayNG install-config',  url:'v2rayng://install-config?url='+encodeURIComponent(vless)},
+        // 3) Прямые URI конфигов (некоторые сборки регистрируют их)
+        {label:'vless:// (raw)',          url:vless},
+      ];
     }
 
-    // iOS deep links + store fallbacks
-    function shadowrocketLink(subUrl, remark){
-      let u = 'shadowrocket://add/sub?url='+encodeURIComponent(subUrl);
-      if(remark) u += '&remark='+encodeURIComponent(remark);
-      return u;
-    }
-    function stashLink(subUrl){ return 'stash://install-config?url='+encodeURIComponent(subUrl); }
-    function appStoreShadowrocket(){ return 'https://apps.apple.com/app/id932747118'; }
-    function appStoreStash(){ return 'https://apps.apple.com/app/id1596063349'; }
+    function attemptOpenChain(cands){
+      // Пытаемся по очереди. Если вкладка уходит в hidden — считаем успех.
+      let idx = 0, success = false;
+      const onVis = () => {
+        if (document.visibilityState === 'hidden') { success = true; cleanup(); }
+      };
+      const timers = [];
+      function cleanup(){ document.removeEventListener('visibilitychange', onVis); timers.forEach(clearTimeout); }
+      document.addEventListener('visibilitychange', onVis);
 
-    function tryOpenWithStoreFallback(schemeUrl, storeUrl){
-      // Стратегия: клик -> пробуем открыть схему; если страница не «ушла в фон» (visibility), через 1200 мс уводим в Store
-      let fired = false;
-      const onVis = () => { if (document.visibilityState === 'hidden') { fired = true; clearTimeout(t); document.removeEventListener('visibilitychange', onVis); } };
-      document.addEventListener('visibilitychange', onVis, { once:false });
-
-      const t = setTimeout(()=>{ if(!fired) location.href = storeUrl; }, 1200);
-      try { location.href = schemeUrl; } catch(e){}
+      function step(){
+        if(success || idx >= cands.length){ cleanup(); return; }
+        try{ location.href = cands[idx].url; }catch(e){}
+        idx += 1;
+        timers.push(setTimeout(step, 900)); // 0.9s между попытками
+      }
+      step();
+      // через 3.6s покажем кнопки, если не удалось
+      timers.push(setTimeout(()=>{ if(!success) document.getElementById('runBlock').classList.remove('hidden'); }, 1200));
     }
 
     (async function main(){
       const status = document.getElementById('status');
       const actions = document.getElementById('actions');
       const errEl = document.getElementById('err');
-      const androidBlock = document.getElementById('androidBlock');
-      const iosBlock = document.getElementById('iosBlock');
-      const subLink = document.getElementById('subLink');
-      const subText = document.getElementById('subText');
       const waHint = document.getElementById('waHint');
       const openExternal = document.getElementById('openExternal');
+      const runBlock = document.getElementById('runBlock');
+      const openPrimary = document.getElementById('openPrimary');
+      const openAlt = document.getElementById('openAlt');
+      const altBlock = document.getElementById('altBlock');
+      const altList = document.getElementById('altList');
+      const subLink = document.getElementById('subLink');
+      const subText = document.getElementById('subText');
+      const copyBtn = document.getElementById('copyBtn');
+      const copied = document.getElementById('copied');
+      const deskHint = document.getElementById('deskHint');
 
       const id = getId();
       if(!id){ status.textContent='Нужен параметр ?id=1..300'; actions.classList.remove('hidden'); errEl.textContent='Параметр ?id= отсутствует.'; return; }
@@ -120,57 +143,42 @@
       await ensureSW();
 
       let vless;
-      try{
-        vless = await getVLESS(id);
-      }catch(e){
-        status.textContent='Ошибка загрузки ключа. Обновите страницу.';
-        actions.classList.remove('hidden');
-        errEl.textContent='Сервис‑воркер ещё не активировался или неверный id.';
-        return;
-      }
+      try{ vless = await getVLESS(id); }
+      catch(e){ status.textContent='Ошибка загрузки ключа. Обнови страницу.'; actions.classList.remove('hidden'); errEl.textContent='SW не активировался или неверный id.'; return; }
 
       actions.classList.remove('hidden');
-      document.getElementById('genericBlock').classList.remove('hidden');
-
-      if(isWhatsApp){
+      if(!isMobile) deskHint.classList.remove('hidden');
+      if(isWhatsApp) {
         waHint.classList.remove('hidden');
-        openExternal.addEventListener('click', (ev)=>{ ev.preventDefault(); window.open(location.href, '_blank'); });
+        openExternal.addEventListener('click', (e)=>{ e.preventDefault(); window.open(location.href, '_blank'); });
       }
 
-      if(isAndroid){
-        const deep = v2rayngLink(vless);
-        const intent = androidIntent(vless);
-        androidBlock.classList.remove('hidden');
+      const cands = buildCandidates(vless);
+      // Основная кнопка + альтернатива
+      openPrimary.href = cands[0].url;
+      openPrimary.textContent = 'Открыть v2rayTun';
+      openAlt.href = cands[1] ? cands[1].url : cands[0].url;
+      openAlt.textContent = 'Альтернатива';
 
-        document.getElementById('openNg').href = deep;
-        document.getElementById('openIntent').href = intent;
+      // Список альтернатив
+      altList.innerHTML = '';
+      cands.forEach((c, i) => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = c.url; a.className = 'btn secondary'; a.textContent = c.label;
+        a.style.marginTop = '8px'; a.style.display = 'inline-block';
+        li.appendChild(a); altList.appendChild(li);
+      });
+      altBlock.classList.remove('hidden');
 
-        // Автозапуск (может блокироваться во встроенном браузере — поэтому есть кнопки)
-        if(!isWhatsApp){
-          try{ location.replace(deep); }catch(e){}
-          const meta = document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+deep; document.head.appendChild(meta);
-          status.textContent='Если не открылось автоматически — нажмите синюю кнопку.';
-        } else {
-          status.textContent='Нажми «Открыть в браузере», затем «Открыть в v2rayNG/v2rayTun».';
-        }
-        return;
-      }
+      // Копирование VLESS
+      copyBtn.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        try{ await navigator.clipboard.writeText(vless); copied.classList.remove('hidden'); setTimeout(()=>copied.classList.add('hidden'), 1500); } catch(err){}
+      });
 
-      if(isIOS){
-        iosBlock.classList.remove('hidden');
-        const sr = shadowrocketLink(subUrl, 'keys-'+String(id));
-        const st = stashLink(subUrl);
-
-        document.getElementById('openSR').addEventListener('click', (ev)=>{ ev.preventDefault(); tryOpenWithStoreFallback(sr, appStoreShadowrocket()); });
-        document.getElementById('openStash').addEventListener('click', (ev)=>{ ev.preventDefault(); tryOpenWithStoreFallback(st, appStoreStash()); });
-
-        status.textContent = isWhatsApp
-          ? 'Нажми «Открыть в браузере», затем «Открыть в Shadowrocket».'
-          : 'Нажми «Открыть в Shadowrocket».';
-        return;
-      }
-
-      status.textContent='Открой ссылку подписки на телефоне или скопируй конфиг.';
+      status.textContent = 'Пробуем открыть v2rayTun…';
+      attemptOpenChain(cands);
     })();
   </script>
 </body>
