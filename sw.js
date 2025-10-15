@@ -1,4 +1,4 @@
-// Service Worker: /sub?id=N -> text/plain с N-й строкой профиля (1..300).
+// /sub?id=N -> text/plain с N-й строкой профиля (1..300).
 const RAW = `vless://2bb4e43d-9913-470b-8ab9-eca875f65072@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-matras_raskladnoi_05_1%2F2year
 vless://31d554e4-e996-4bff-8a61-2856638c76ea@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-6g61ojxfmatras_raskladnoi_05_1%2F2year1
 vless://716e1287-ed12-4407-bb43-683723a8f297@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-472y5f35matras_raskladnoi_05_1%2F2year2
