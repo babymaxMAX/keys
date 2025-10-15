@@ -7,14 +7,11 @@
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding:24px;max-width:880px;margin:0 auto}
     h1{font-size:24px;margin:0 0 12px}
-    .muted{color:#555}
-    .hidden{display:none}
-    .err{color:#b00020}
+    .muted{color:#555}.hidden{display:none}.err{color:#b00020}
     a.btn{display:inline-block;padding:12px 16px;background:#0b57d0;color:#fff;border-radius:10px;text-decoration:none}
     a.btn.secondary{background:#5f6368}
     code{background:#f6f8fa;padding:0 4px;border-radius:4px}
-    .row{margin-top:16px}
-    ul{margin:8px 0 0 18px}
+    .row{margin-top:16px} ul{margin:8px 0 0 18px}
   </style>
 </head>
 <body>
@@ -25,22 +22,17 @@
     <p id="err" class="err"></p>
 
     <div id="waHint" class="hidden muted row">
-      Если открыто из WhatsApp/встроенного браузера — нажми «Открыть в браузере», затем «Открыть v2rayTun».
-      <div class="row">
-        <a id="openExternal" class="btn secondary" href="#" rel="noopener">Открыть в браузере</a>
-      </div>
+      Если открыто из мессенджера, нажми «Открыть в браузере», затем «Открыть v2rayTun».
+      <div class="row"><a id="openExternal" class="btn secondary" href="#" rel="noopener">Открыть в браузере</a></div>
     </div>
 
     <div id="runBlock" class="hidden row">
       <a id="openPrimary" class="btn" href="#" rel="noopener">Открыть v2rayTun</a>
       <a id="openAlt" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Альтернатива</a>
-      <div class="muted" style="margin-top:10px">
-        Если не открылось, попробуй альтернативные кнопки ниже или «Открыть в браузере».
-      </div>
     </div>
 
     <div id="altBlock" class="hidden row">
-      <p class="muted">Альтернативные ссылки запуска:</p>
+      <p class="muted">Другие варианты запуска:</p>
       <ul id="altList"></ul>
     </div>
 
@@ -48,137 +40,91 @@
       <p class="muted">Запасной вариант — подписка (импорт внутри приложения):</p>
       <p><a id="subLink" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
       <p class="muted">Адрес: <code id="subText"></code></p>
-      <p class="muted">Либо скопируй сам конфиг (длинная строка):</p>
+      <p class="muted">Или скопируй конфиг вручную:</p>
       <p><a id="copyBtn" class="btn secondary" href="#">Скопировать VLESS</a></p>
       <p id="copied" class="muted hidden">Скопировано.</p>
-    </div>
-
-    <div id="deskHint" class="row hidden">
-      <p class="muted">Эту ссылку лучше открывать на телефоне с установленным v2rayTun.</p>
     </div>
   </div>
 
   <script>
-    const ua = navigator.userAgent || "";
-    const isAndroid = /Android/i.test(ua);
-    const isIOS = /iPhone|iPad|iPod/i.test(ua);
-    const isWhatsApp = /WhatsApp|Line|FBAN|FBAV|Instagram|VKClient/i.test(ua);
+    const ua = navigator.userAgent||"";
     const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+    const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
 
-    function getId(){
-      const n = parseInt(new URLSearchParams(location.search).get('id'), 10);
-      return Number.isFinite(n) ? n : null;
-    }
+    const qs = new URLSearchParams(location.search);
+    const id = parseInt(qs.get('id'),10);
+    const status = document.getElementById('status');
+    const actions = document.getElementById('actions');
+    const errEl = document.getElementById('err');
+    const waHint = document.getElementById('waHint');
+    const openExternal = document.getElementById('openExternal');
+    const runBlock = document.getElementById('runBlock');
+    const openPrimary = document.getElementById('openPrimary');
+    const openAlt = document.getElementById('openAlt');
+    const altBlock = document.getElementById('altBlock');
+    const altList = document.getElementById('altList');
+    const subLink = document.getElementById('subLink');
+    const subText = document.getElementById('subText');
+    const copyBtn = document.getElementById('copyBtn');
+    const copied = document.getElementById('copied');
 
-    async function ensureSW(){
-      if(!('serviceWorker' in navigator)) return;
-      try{
-        await navigator.serviceWorker.register('/sw.js', {scope:'/'});
-        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r, 200));
-      }catch(e){}
-    }
-    async function getVLESS(id){
-      const r = await fetch('/sub?id='+id, {cache:'no-store'});
-      if(!r.ok) throw new Error('sub '+r.status);
-      return (await r.text()).trim();
-    }
+    if(!id){ status.textContent='Нужен параметр ?id=1..300'; actions.classList.remove('hidden'); errEl.textContent='Параметр ?id= отсутствует.'; }
 
-    // Кандидаты deep‑link схем для v2rayTun (встречаются разные сборки)
-    function buildCandidates(vless){
-      return [
-        // 1) Самые частые:
-        {label:'v2rayTun install-config', url:'v2raytun://install-config?url='+encodeURIComponent(vless)},
-        {label:'v2rayTun import',         url:'v2raytun://import?url='+encodeURIComponent(vless)},
-        // 2) Совместимые схемы v2rayNG (часть сборок v2rayTun их ловит)
-        {label:'v2rayNG install-config',  url:'v2rayng://install-config?url='+encodeURIComponent(vless)},
-        // 3) Прямые URI конфигов (некоторые сборки регистрируют их)
-        {label:'vless:// (raw)',          url:vless},
-      ];
-    }
+    const subUrl = location.origin + '/sub?id=' + id;
+    subLink.href = subUrl; subText.textContent = subUrl;
 
-    function attemptOpenChain(cands){
-      // Пытаемся по очереди. Если вкладка уходит в hidden — считаем успех.
-      let idx = 0, success = false;
-      const onVis = () => {
-        if (document.visibilityState === 'hidden') { success = true; cleanup(); }
-      };
-      const timers = [];
-      function cleanup(){ document.removeEventListener('visibilitychange', onVis); timers.forEach(clearTimeout); }
-      document.addEventListener('visibilitychange', onVis);
-
-      function step(){
-        if(success || idx >= cands.length){ cleanup(); return; }
-        try{ location.href = cands[idx].url; }catch(e){}
-        idx += 1;
-        timers.push(setTimeout(step, 900)); // 0.9s между попытками
+    (async() => {
+      // SW нужен только для /sub — если его нет, всё равно продолжим
+      if('serviceWorker' in navigator){
+        try{
+          await navigator.serviceWorker.register('/sw.js',{scope:'/'});
+          if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,150));
+        }catch(_){}
       }
-      step();
-      // через 3.6s покажем кнопки, если не удалось
-      timers.push(setTimeout(()=>{ if(!success) document.getElementById('runBlock').classList.remove('hidden'); }, 1200));
-    }
 
-    (async function main(){
-      const status = document.getElementById('status');
-      const actions = document.getElementById('actions');
-      const errEl = document.getElementById('err');
-      const waHint = document.getElementById('waHint');
-      const openExternal = document.getElementById('openExternal');
-      const runBlock = document.getElementById('runBlock');
-      const openPrimary = document.getElementById('openPrimary');
-      const openAlt = document.getElementById('openAlt');
-      const altBlock = document.getElementById('altBlock');
-      const altList = document.getElementById('altList');
-      const subLink = document.getElementById('subLink');
-      const subText = document.getElementById('subText');
-      const copyBtn = document.getElementById('copyBtn');
-      const copied = document.getElementById('copied');
-      const deskHint = document.getElementById('deskHint');
-
-      const id = getId();
-      if(!id){ status.textContent='Нужен параметр ?id=1..300'; actions.classList.remove('hidden'); errEl.textContent='Параметр ?id= отсутствует.'; return; }
-
-      const subUrl = location.origin + '/sub?id=' + id;
-      subLink.href = subUrl; subText.textContent = subUrl;
-
-      await ensureSW();
-
-      let vless;
-      try{ vless = await getVLESS(id); }
-      catch(e){ status.textContent='Ошибка загрузки ключа. Обнови страницу.'; actions.classList.remove('hidden'); errEl.textContent='SW не активировался или неверный id.'; return; }
+      let vless = '';
+      try{
+        const r = await fetch(subUrl,{cache:'no-store'}); if(!r.ok) throw 0;
+        vless = (await r.text()).trim();
+      }catch(_){
+        actions.classList.remove('hidden'); errEl.textContent='Не удалось получить конфиг /sub?id='+id; status.textContent='Ошибка загрузки.'; return;
+      }
 
       actions.classList.remove('hidden');
-      if(!isMobile) deskHint.classList.remove('hidden');
-      if(isWhatsApp) {
-        waHint.classList.remove('hidden');
-        openExternal.addEventListener('click', (e)=>{ e.preventDefault(); window.open(location.href, '_blank'); });
-      }
+      if(isInApp){ waHint.classList.remove('hidden'); openExternal.onclick=e=>{e.preventDefault(); window.open(location.href,'_blank');}; }
 
-      const cands = buildCandidates(vless);
-      // Основная кнопка + альтернатива
-      openPrimary.href = cands[0].url;
-      openPrimary.textContent = 'Открыть v2rayTun';
-      openAlt.href = cands[1] ? cands[1].url : cands[0].url;
-      openAlt.textContent = 'Альтернатива';
+      // Набор схем, которые последовательно пробуем
+      const candidates = [
+        {label:'v2rayTun install-config', url:'v2raytun://install-config?url='+encodeURIComponent(vless)},
+        {label:'v2rayTun import',         url:'v2raytun://import?url='+encodeURIComponent(vless)},
+        {label:'v2rayNG install-config',  url:'v2rayng://install-config?url='+encodeURIComponent(vless)},
+        {label:'vless:// (raw)',          url:vless}
+      ];
 
-      // Список альтернатив
-      altList.innerHTML = '';
-      cands.forEach((c, i) => {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = c.url; a.className = 'btn secondary'; a.textContent = c.label;
-        a.style.marginTop = '8px'; a.style.display = 'inline-block';
-        li.appendChild(a); altList.appendChild(li);
-      });
+      // Кнопки
+      openPrimary.href = candidates[0].url;
+      openAlt.href = candidates[1].url;
+      altList.innerHTML='';
+      candidates.forEach(c=>{ const li=document.createElement('li'); const a=document.createElement('a'); a.href=c.url; a.className='btn secondary'; a.textContent=c.label; a.style.display='inline-block'; a.style.marginTop='8px'; li.appendChild(a); altList.appendChild(li); });
       altBlock.classList.remove('hidden');
+      runBlock.classList.remove('hidden');
 
-      // Копирование VLESS
-      copyBtn.addEventListener('click', async (e)=>{
-        e.preventDefault();
-        try{ await navigator.clipboard.writeText(vless); copied.classList.remove('hidden'); setTimeout(()=>copied.classList.add('hidden'), 1500); } catch(err){}
-      });
+      // Копирование
+      copyBtn.onclick = async (e)=>{ e.preventDefault(); try{ await navigator.clipboard.writeText(vless); copied.classList.remove('hidden'); setTimeout(()=>copied.classList.add('hidden'),1200);}catch(_){} };
 
+      // Автозапуск цепочкой
       status.textContent = 'Пробуем открыть v2rayTun…';
-      attemptOpenChain(cands);
+      if(isMobile){
+        let i = 0, gone = false;
+        const vis = ()=>{ if(document.visibilityState==='hidden'){ gone=true; cleanup(); } };
+        const timers=[]; function cleanup(){ document.removeEventListener('visibilitychange',vis); timers.forEach(clearTimeout); }
+        document.addEventListener('visibilitychange',vis);
+        function step(){ if(gone||i>=candidates.length) return; try{ location.href = candidates[i].url; }catch(_){ } i++; timers.push(setTimeout(step,900)); }
+        // сразу пробуем + дубль через meta refresh
+        step(); const meta=document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+candidates[0].url; document.head.appendChild(meta);
+      }else{
+        status.textContent='Открой на телефоне с v2rayTun или используй подписку/копирование.';
+      }
     })();
   </script>
 </body>
