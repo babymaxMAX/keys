@@ -2,29 +2,42 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>VPN auto-import</title>
+  <title>Авто‑импорт профиля</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding:24px;max-width:880px;margin:0 auto}
-    .hidden{display:none}.err{color:#b00020}
-    a.btn{display:inline-block;padding:10px 14px;background:#0b57d0;color:#fff;border-radius:8px;text-decoration:none}
+    h1{font-size:28px;margin:0 0 12px}
+    .muted{color:#555}
+    .hidden{display:none}
+    .err{color:#b00020}
+    a.btn{display:inline-block;padding:12px 16px;background:#0b57d0;color:#fff;border-radius:10px;text-decoration:none}
     a.btn.secondary{background:#5f6368}
     code{background:#f6f8fa;padding:0 4px;border-radius:4px}
+    .row{margin-top:16px}
   </style>
 </head>
 <body>
   <h1>Авто‑импорт профиля</h1>
-  <p id="status">Готовим перенаправление…</p>
+  <p id="status" class="muted">Готовим перенаправление…</p>
 
   <div id="actions" class="hidden">
-    <p class="err" id="err"></p>
-    <p>
-      <a id="openPrimary" class="btn" href="#">Открыть</a>
-      <a id="openAlt" class="btn secondary" href="#" style="margin-left:8px;">Альтернатива</a>
-    </p>
-    <p id="iosHelp" class="hidden">
-      Если не открылось — в Shadowrocket нажми “+”, затем “Subscribe” и вставь ссылку: <code id="subUrl"></code>
-    </p>
+    <p id="err" class="err"></p>
+    <div id="androidBlock" class="hidden row">
+      <a id="openNg" class="btn" href="#">Открыть в v2rayNG/v2rayTun</a>
+      <a id="openIntent" class="btn secondary" href="#" style="margin-left:8px;">Через intent</a>
+    </div>
+
+    <div id="iosBlock" class="hidden row">
+      <a id="openSR" class="btn" href="#">Открыть в Shadowrocket</a>
+      <a id="openStash" class="btn secondary" href="#" style="margin-left:8px;">Открыть в Stash</a>
+      <p class="muted" style="margin-top:10px">Если не открылось — приложение установится из App Store автоматически.</p>
+    </div>
+
+    <div id="genericBlock" class="row">
+      <p class="muted">Ссылка подписки (откроется на iOS/или скопируйте):</p>
+      <p><a id="subLink" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
+      <p class="muted">Адрес: <code id="subText"></code></p>
+    </div>
   </div>
 
   <script>
@@ -39,95 +52,116 @@
     async function ensureSW(){
       if(!('serviceWorker' in navigator)) return;
       try{
-        const reg = await navigator.serviceWorker.register('/sw.js', {scope:'/'});
+        await navigator.serviceWorker.register('/sw.js', {scope:'/'});
         if(!navigator.serviceWorker.controller){
-          await new Promise(r => setTimeout(r, 200));
+          await new Promise(r=>setTimeout(r, 200));
         }
       }catch(e){}
     }
 
-    async function fetchVLESS(id){
-      const res = await fetch('/sub?id='+id, {cache:'no-store'});
-      if(!res.ok) throw new Error('sub '+res.status);
-      return (await res.text()).trim();
+    async function getVLESS(id){
+      const r = await fetch('/sub?id='+id, {cache:'no-store'});
+      if(!r.ok) throw new Error('sub '+r.status);
+      return (await r.text()).trim();
     }
 
-    function v2rayngLink(vless){
-      return 'v2rayng://install-config?url='+encodeURIComponent(vless);
-    }
+    function v2rayngLink(vless){ return 'v2rayng://install-config?url='+encodeURIComponent(vless); }
     function androidIntent(vless){
-      const qs = 'install-config?url='+encodeURIComponent(vless);
+      const qs='install-config?url='+encodeURIComponent(vless);
       return 'intent://'+qs+'#Intent;scheme=v2rayng;package=com.v2ray.ang;end';
     }
-    function shadowrocketSubLink(subUrl){
-      return 'shadowrocket://add/sub?url='+encodeURIComponent(subUrl);
+
+    function shadowrocketLink(subUrl, remark){
+      let u = 'shadowrocket://add/sub?url='+encodeURIComponent(subUrl);
+      if(remark) u += '&remark='+encodeURIComponent(remark);
+      return u;
+    }
+    function stashLink(subUrl){
+      // Stash (iOS) импорт подписки
+      return 'stash://install-config?url='+encodeURIComponent(subUrl);
+    }
+    function toAppStoreShadowrocket(){
+      return 'https://apps.apple.com/app/id932747118';
+    }
+    function toAppStoreStash(){
+      return 'https://apps.apple.com/app/id1596063349';
     }
 
     (async function main(){
       const status = document.getElementById('status');
       const actions = document.getElementById('actions');
       const errEl = document.getElementById('err');
-      const openPrimary = document.getElementById('openPrimary');
-      const openAlt = document.getElementById('openAlt');
-      const iosHelp = document.getElementById('iosHelp');
-      const subUrlEl = document.getElementById('subUrl');
+      const androidBlock = document.getElementById('androidBlock');
+      const iosBlock = document.getElementById('iosBlock');
+      const subLink = document.getElementById('subLink');
+      const subText = document.getElementById('subText');
 
       const id = getId();
       if(!id){ status.textContent='Нужен параметр ?id=1..300'; actions.classList.remove('hidden'); errEl.textContent='Параметр ?id= отсутствует.'; return; }
 
+      const subUrl = location.origin + '/sub?id=' + id;
+      subLink.href = subUrl; subText.textContent = subUrl;
+
       await ensureSW();
 
-      const subUrl = location.origin + '/sub?id=' + id; // для iOS подписки
+      let vless;
       try{
-        const vless = await fetchVLESS(id);
-
-        if(isAndroid){
-          const deep = v2rayngLink(vless);
-          const alt = androidIntent(vless);
-
-          // мгновенный переход
-          try{ location.replace(deep); }catch(e){}
-          // мета‑редирект как дубль
-          const meta=document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+deep; document.head.appendChild(meta);
-
-          // показать кнопки на случай блокировки in-app браузером
-          setTimeout(()=> {
-            status.textContent='Если не открылось — нажми кнопку ниже.';
-            actions.classList.remove('hidden');
-            openPrimary.href = deep; openPrimary.textContent='Открыть в v2rayNG/v2rayTun';
-            openAlt.href = alt; openAlt.textContent='Через intent';
-          }, 1200);
-          return;
-        }
-
-        if(isIOS){
-          // Основной путь для iOS — подписка Shadowrocket
-          const rocket = shadowrocketSubLink(subUrl);
-          try{ location.replace(rocket); }catch(e){}
-          const meta=document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+rocket; document.head.appendChild(meta);
-
-          setTimeout(()=> {
-            status.textContent='Нажми “Открыть” для импорта в Shadowrocket.';
-            actions.classList.remove('hidden');
-            openPrimary.href = rocket; openPrimary.textContent='Открыть в Shadowrocket';
-            openAlt.href = subUrl; openAlt.textContent='Показать ссылку подписки';
-            iosHelp.classList.remove('hidden'); subUrlEl.textContent=subUrl;
-          }, 1200);
-          return;
-        }
-
-        // Десктоп/прочее — показать ссылку подписки
-        status.textContent='Открой на телефоне по ссылке подписки (или скопируй конфиг).';
-        actions.classList.remove('hidden');
-        openPrimary.href = subUrl; openPrimary.textContent='Ссылка подписки (iOS)';
-        openAlt.href = v2rayngLink(vless); openAlt.textContent='Ссылка (Android)';
-        iosHelp.classList.remove('hidden'); subUrlEl.textContent=subUrl;
-
+        vless = await getVLESS(id);
       }catch(e){
-        status.textContent='Ошибка загрузки ключа.';
+        status.textContent='Ошибка загрузки ключа. Обновите страницу.';
         actions.classList.remove('hidden');
-        errEl.textContent='Ключ не найден или сервис‑воркер не активировался. Обнови страницу и проверь ?id=1..300.';
+        errEl.textContent='Сервис‑воркер ещё не активировался или неверный id.';
+        return;
       }
+
+      actions.classList.remove('hidden');
+      document.getElementById('genericBlock').classList.remove('hidden');
+
+      if(isAndroid){
+        const deep = v2rayngLink(vless);
+        const intent = androidIntent(vless);
+        androidBlock.classList.remove('hidden');
+
+        document.getElementById('openNg').href = deep;
+        document.getElementById('openIntent').href = intent;
+
+        // Автопереход (часто блокируется во встройке WhatsApp — поэтому и кнопки есть)
+        try{ location.replace(deep); }catch(e){}
+        const meta = document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+deep; document.head.appendChild(meta);
+
+        status.textContent='Если не открылось автоматически — нажмите синюю кнопку.';
+        return;
+      }
+
+      if(isIOS){
+        iosBlock.classList.remove('hidden');
+        const sr = shadowrocketLink(subUrl, 'keys-'+String(id));
+        const st = stashLink(subUrl);
+
+        const openSR = document.getElementById('openSR');
+        const openStash = document.getElementById('openStash');
+
+        openSR.addEventListener('click', (ev)=>{
+          ev.preventDefault();
+          let opened = false;
+          const t = setTimeout(()=>{ if(!opened) location.href = toAppStoreShadowrocket(); }, 1200);
+          try{ location.href = sr; opened = true; }catch(e){}
+          // на случай блокировки схемы — показать ссылку подписки
+        });
+
+        openStash.addEventListener('click', (ev)=>{
+          ev.preventDefault();
+          let opened = false;
+          const t = setTimeout(()=>{ if(!opened) location.href = toAppStoreStash(); }, 1200);
+          try{ location.href = st; opened = true; }catch(e){}
+        });
+
+        status.textContent='Нажмите «Открыть в Shadowrocket». Если не установлено — откроется App Store.';
+        return;
+      }
+
+      // Desktop/прочее
+      status.textContent='Откройте ссылку подписки на телефоне или скопируйте конфиг.';
     })();
   </script>
 </body>
