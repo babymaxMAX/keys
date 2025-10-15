@@ -2,389 +2,132 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Open v2rayTun</title>
+  <title>VPN auto-import</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5; padding: 24px; max-width: 880px; margin: 0 auto; }
-    code, pre { background: #f6f8fa; padding: 0 4px; border-radius: 4px; }
-    .hidden { display: none; }
-    .err { color: #b00020; }
-    a.button { display: inline-block; padding: 10px 14px; background: #0b57d0; color: #fff; border-radius: 8px; text-decoration: none; }
-    a.button.secondary { background: #5f6368; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding:24px;max-width:880px;margin:0 auto}
+    .hidden{display:none}.err{color:#b00020}
+    a.btn{display:inline-block;padding:10px 14px;background:#0b57d0;color:#fff;border-radius:8px;text-decoration:none}
+    a.btn.secondary{background:#5f6368}
+    code{background:#f6f8fa;padding:0 4px;border-radius:4px}
   </style>
 </head>
 <body>
-  <h1>Авто-импорт профиля в v2rayTun</h1>
-  <p id="status">Идёт перенаправление…</p>
-  <div id="help" class="hidden">
-    <p class="err">Не найден параметр <code>?id=</code> или ключ отсутствует.</p>
-    <p>Используйте формат: <code>https://ИМЯ.onrender.com/?id=1</code> (от 1 до 300).</p>
+  <h1>Авто‑импорт профиля</h1>
+  <p id="status">Готовим перенаправление…</p>
+
+  <div id="actions" class="hidden">
+    <p class="err" id="err"></p>
     <p>
-      Если автопереход не сработал:
-      <a id="deepLink" class="button" href="#">Открыть в v2rayTun</a>
-      <a id="intentLink" class="button secondary" href="#" style="margin-left:8px;">Через intent</a>
+      <a id="openPrimary" class="btn" href="#">Открыть</a>
+      <a id="openAlt" class="btn secondary" href="#" style="margin-left:8px;">Альтернатива</a>
+    </p>
+    <p id="iosHelp" class="hidden">
+      Если не открылось — в Shadowrocket нажми “+”, затем “Subscribe” и вставь ссылку: <code id="subUrl"></code>
     </p>
   </div>
 
   <script>
-    const raw = `vless://2bb4e43d-9913-470b-8ab9-eca875f65072@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-matras_raskladnoi_05_1%2F2year
-vless://31d554e4-e996-4bff-8a61-2856638c76ea@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-6g61ojxfmatras_raskladnoi_05_1%2F2year1
-vless://716e1287-ed12-4407-bb43-683723a8f297@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-472y5f35matras_raskladnoi_05_1%2F2year2
-vless://04bd5d6b-6149-4680-aa6b-23de98e81d55@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-15a02a0cmatras_raskladnoi_05_1%2F2year3
-vless://859ba33a-e009-470b-b2b0-4066c4c80051@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-xg25earbmatras_raskladnoi_05_1%2F2year4
-vless://8a590136-dd75-4d41-a1b4-275d5ffe3b44@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-gnwtvyknmatras_raskladnoi_05_1%2F2year5
-vless://48ebeadd-78a8-407b-8567-f31b80218d08@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-thj37hkhmatras_raskladnoi_05_1%2F2year6
-vless://43a6574f-9196-4df4-b929-91e1e77ec06b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-qcrb9roymatras_raskladnoi_05_1%2F2year7
-vless://56af3f81-e795-4710-98bc-e0e59c178490@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-78pdsnl2matras_raskladnoi_05_1%2F2year8
-vless://d1679a4f-76f0-4e7b-8af3-d51d2deadc96@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ku7tgbwjmatras_raskladnoi_05_1%2F2year9
-vless://5570be28-8e1c-4334-9b80-e3decb41bf46@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-fiq3v8zfmatras_raskladnoi_05_1%2F2year10
-vless://c2c3819f-6124-4498-a679-f0db5beb312c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-yle0geyomatras_raskladnoi_05_1%2F2year11
-vless://96766099-9a85-44b0-b2d7-3834edcddfb1@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-cgkziq5amatras_raskladnoi_05_1%2F2year12
-vless://a26197ef-8d0e-4786-a3e5-2cd2a488737e@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wl92l05rmatras_raskladnoi_05_1%2F2year13
-vless://5a187983-15a4-43b7-ae9b-a9e16eab8d17@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-gszv90fcmatras_raskladnoi_05_1%2F2year14
-vless://aef6a7a8-5c78-4316-9fbe-e724d87eb8fa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mcpbucjjmatras_raskladnoi_05_1%2F2year15
-vless://596fb946-8946-4286-ad78-e48dcb3a1632@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hja70sfumatras_raskladnoi_05_1%2F2year16
-vless://773d437d-a8a8-41bc-ab0f-58affdd11d1d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-tpnos4f8matras_raskladnoi_05_1%2F2year17
-vless://818af3a1-6b71-4001-98c5-bf8ceaad2b65@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wti61w8umatras_raskladnoi_05_1%2F2year18
-vless://3eb8e7a2-a77b-4907-8062-ae9961f8c6ea@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hmd5hvw2matras_raskladnoi_05_1%2F2year19
-vless://ad5b598f-bfb9-421e-942e-7ca804adca7c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-q1n5ktxomatras_raskladnoi_05_1%2F2year20
-vless://f85c1ede-631d-4867-aacd-c335d442f40a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-obgwjdtqmatras_raskladnoi_05_1%2F2year21
-vless://08a00835-c86e-4f0c-9ba8-a763a770c5d7@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hdmkhr2imatras_raskladnoi_05_1%2F2year22
-vless://842c438d-99de-4664-980c-acd788871971@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rvg35sp6matras_raskladnoi_05_1%2F2year23
-vless://b6bc0f0a-a714-49d1-8bf9-2ab2ffb17128@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-enai2mx7matras_raskladnoi_05_1%2F2year24
-vless://8ce2d985-1834-4abc-a8c9-3e492c418673@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rom4hi26matras_raskladnoi_05_1%2F2year25
-vless://0981dd40-6e9b-4e85-bcfc-2e362f2d282c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-er8nfy4wmatras_raskladnoi_05_1%2F2year26
-vless://3cf0d0fb-299e-4f08-8c25-5ed456eb32e5@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-60ql7wmfmatras_raskladnoi_05_1%2F2year27
-vless://fb9e6186-2cb0-4374-bb81-aba41be90ccd@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-91u4xlsfmatras_raskladnoi_05_1%2F2year28
-vless://39de9ecb-5cdd-4eb1-b3c6-0212f53340d7@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-v9wxc4m7matras_raskladnoi_05_1%2F2year29
-vless://fa9f3e8a-ba2c-4d26-ae4c-fe22919d5af4@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ezifzudzmatras_raskladnoi_05_1%2F2year30
-vless://060e8336-b181-497a-9fef-93c078a3cfcf@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wc4crpwpmatras_raskladnoi_05_1%2F2year31
-vless://5a0f0386-6144-4ab4-bab6-4ad78ea4557a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-oytff4utmatras_raskladnoi_05_1%2F2year32
-vless://f4110949-d5cb-4ddd-bae5-5d3ace1faf52@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-sf3byslvmatras_raskladnoi_05_1%2F2year33
-vless://7260180c-e888-4b0b-b3b7-aa80844dcaab@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wtt8qweymatras_raskladnoi_05_1%2F2year34
-vless://208beebe-4011-4769-a2dc-67ea93f79165@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-19cpekiwmatras_raskladnoi_05_1%2F2year35
-vless://1691f7bc-6a2f-449a-8a8b-62c762f96d17@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hyfvvfhzmatras_raskladnoi_05_1%2F2year36
-vless://0e541574-a9ba-4f3e-9147-39e194e53c5b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-l4so46gymatras_raskladnoi_05_1%2F2year37
-vless://1ba1fd90-1a7d-4c42-8d3b-3b5f009e77e6@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-efbsaeycmatras_raskladnoi_05_1%2F2year38
-vless://a74da40d-cfde-4417-a2e5-8e0a4b855ae0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-8go0r28umatras_raskladnoi_05_1%2F2year39
-vless://558e11df-f44c-4bf6-9dac-1db0631b170d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-5ys1xkuxmatras_raskladnoi_05_1%2F2year40
-vless://c237f35f-1376-4abc-b64d-a80bf0e21c46@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-jshon29rmatras_raskladnoi_05_1%2F2year41
-vless://4b381ff4-60f0-4028-b9a3-3dbc6af44d32@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-3t0x6b3zmatras_raskladnoi_05_1%2F2year42
-vless://754dc87c-82df-4ccf-939f-c2b9277ba5ab@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-tosylxmcmatras_raskladnoi_05_1%2F2year43
-vless://a453ac1b-9830-415b-8dc7-3510029c8e84@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-kbs1xlgematras_raskladnoi_05_1%2F2year44
-vless://fbd45538-024f-4e80-8ef9-9e7e50b7331b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2swe8mhbmatras_raskladnoi_05_1%2F2year45
-vless://f45955e4-983f-4a0f-864c-2d9bd1f129a0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-cs5haau6matras_raskladnoi_05_1%2F2year46
-vless://74b3c751-c936-4e2c-9cb7-8ddc9283701f@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wavwww4hmatras_raskladnoi_05_1%2F2year47
-vless://2dc95468-c269-4e43-9c08-99142b4d4f00@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-xpzpv8ecmatras_raskladnoi_05_1%2F2year48
-vless://f6b17d4f-8a0e-4cac-9722-6d81f13b7a9a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-a6w9d89cmatras_raskladnoi_05_1%2F2year49
-vless://2ed87a57-5cb3-49be-89c5-1d55b30601fb@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-8pyyu1komatras_raskladnoi_05_1%2F2year50
-vless://19e167e9-6b22-47a0-88e6-3d5259a7921d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-8x1duedxmatras_raskladnoi_05_1%2F2year51
-vless://dcda75fa-8ad1-4c76-b06c-e4e704443c90@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-t8klx376matras_raskladnoi_05_1%2F2year52
-vless://4b2854e9-fbda-438d-8069-a5d8f4e339d2@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-v6xwvemimatras_raskladnoi_05_1%2F2year53
-vless://737b343b-3fe6-438b-bf77-d1cfeca60d1c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-bnjwrn3rmatras_raskladnoi_05_1%2F2year54
-vless://bae08bfc-2f7d-4be5-aa2c-cb22cf36702b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-m9wtbdm4matras_raskladnoi_05_1%2F2year55
-vless://7063e624-d6b1-4eab-ab0d-c81fdc4f267e@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-f50wqeyematras_raskladnoi_05_1%2F2year56
-vless://f9639696-be4b-4330-8fc8-013946a39415@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hoafvxudmatras_raskladnoi_05_1%2F2year57
-vless://838945c7-0181-4707-87cb-2fa23d4310e0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-44cj7df5matras_raskladnoi_05_1%2F2year58
-vless://b8c4e415-5257-4c06-b104-e559ea216dfc@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-lkkmrn95matras_raskladnoi_05_1%2F2year59
-vless://9ce4df69-d4e4-48a5-8e4d-de308eca97ec@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-jju3tnzvmatras_raskladnoi_05_1%2F2year60
-vless://90b331be-d61f-4e33-9bff-42d02a6a0e5c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-bey17a8amatras_raskladnoi_05_1%2F2year61
-vless://41a62522-8be5-48f4-8a27-7c7aaf440676@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-k4gv8vfbmatras_raskladnoi_05_1%2F2year62
-vless://8a1ae482-c416-4778-88d8-c7cd17ac39db@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-6djz7kthmatras_raskladnoi_05_1%2F2year63
-vless://6153d7b8-9d86-4dca-8190-a4214c60d618@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-s0acml48matras_raskladnoi_05_1%2F2year64
-vless://f77b673d-a4cb-436c-8cd4-f5c1855152e6@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-unjfv3tlmatras_raskladnoi_05_1%2F2year65
-vless://7837f568-861c-4f0a-8cad-d774e2e632aa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ook1sn3rmatras_raskladnoi_05_1%2F2year66
-vless://98631280-02c3-4633-93f8-508d39beac53@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-46gkevvxmatras_raskladnoi_05_1%2F2year67
-vless://0a3fb206-8170-4eb4-99f8-d08a3d592d22@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mkhxb4g5matras_raskladnoi_05_1%2F2year68
-vless://db62d005-bfee-46bc-abb7-541c609ee75a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-uteht3iumatras_raskladnoi_05_1%2F2year69
-vless://e86a313d-454d-4e71-95c2-9fda4f1ab973@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-c7o9qa15matras_raskladnoi_05_1%2F2year70
-vless://a782c1b4-1bf9-4b0d-ac29-9391ecb63791@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-cq5k5inlmatras_raskladnoi_05_1%2F2year71
-vless://2d9ce133-1538-4116-81f3-7e723faf7ecc@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-tc6f6u1gmatras_raskladnoi_05_1%2F2year72
-vless://48179e40-a355-4f76-a7e6-b1f0248b1396@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ibevu274matras_raskladnoi_05_1%2F2year73
-vless://fcfef939-394c-492a-a520-531062b1af7b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-8q6niloimatras_raskladnoi_05_1%2F2year74
-vless://338b1dab-a950-48a4-ae76-e2dafd116145@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-q73ayv0tmatras_raskladnoi_05_1%2F2year75
-vless://6726a9d2-792a-4766-8065-420508f3e0e2@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-my08okemmatras_raskladnoi_05_1%2F2year76
-vless://08d60fca-71fb-4463-aa6d-18a46cc2dafa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ql5e3h67matras_raskladnoi_05_1%2F2year77
-vless://407c866d-4bf8-40d1-9b99-f76d47b3da11@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-nw1wfb07matras_raskladnoi_05_1%2F2year78
-vless://9ea25952-92f8-4d88-8d50-6efd910d4177@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-gztp3y9ymatras_raskladnoi_05_1%2F2year79
-vless://8cab8a55-267e-4d14-96e0-c738879749b1@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-sxrx79rmmatras_raskladnoi_05_1%2F2year80
-vless://f7844979-a97c-4b50-b65c-2b78f42d50ab@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-tvcwemoimatras_raskladnoi_05_1%2F2year81
-vless://0b5721d3-3b63-4c82-9739-9f2dc18265d4@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-05b7hat4matras_raskladnoi_05_1%2F2year82
-vless://9e0835d2-8902-44eb-bad5-815e04289f08@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-cfarjdaamatras_raskladnoi_05_1%2F2year83
-vless://80f6fc3f-154e-4ce3-8ed7-a7c84063eacb@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-tuebhaqqmatras_raskladnoi_05_1%2F2year84
-vless://76ea373b-8b6f-444e-bfb8-39e4147e35ce@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-eqfrsb53matras_raskladnoi_05_1%2F2year85
-vless://c83cc632-56fa-4894-b616-4e195d8d34c1@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-6ltzi0xvmatras_raskladnoi_05_1%2F2year86
-vless://4f9d6ad4-836c-4681-8bac-8aa219ce7b56@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-vi1wrv70matras_raskladnoi_05_1%2F2year87
-vless://3d102565-a83d-41a3-8c4e-29be55036958@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-k6dspv5omatras_raskladnoi_05_1%2F2year88
-vless://bb0bd268-aa11-452f-a04a-e203e8e06d17@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-cojbr7famatras_raskladnoi_05_1%2F2year89
-vless://0ccc7fc9-769e-46e9-81a2-7b6abefc7945@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-90a9t52gmatras_raskladnoi_05_1%2F2year90
-vless://fde53efe-28f8-483c-8992-6b00db875a89@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-qu33li11matras_raskladnoi_05_1%2F2year91
-vless://777f37ec-aaf8-45ca-bbbd-226bd0e67060@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ea2bn5snmatras_raskladnoi_05_1%2F2year92
-vless://4190cdf0-5470-42ec-81cc-4d8cf4d1dc66@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ihxqt7i4matras_raskladnoi_05_1%2F2year93
-vless://277b02ac-dfa2-4221-9286-bdd589fc7055@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-6hf42s6wmatras_raskladnoi_05_1%2F2year94
-vless://136b0e03-408d-4710-85a6-2836150c89b0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-evpxk6kzmatras_raskladnoi_05_1%2F2year95
-vless://e5a6d768-77e8-474c-9b36-6cd113a896da@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-oca1xd8smatras_raskladnoi_05_1%2F2year96
-vless://1f427d49-058b-4f02-a74e-a35f634e34aa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-bectc678matras_raskladnoi_05_1%2F2year97
-vless://01aabcba-e6e1-4e91-bad2-783f1ba7d987@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-0v3jaedtmatras_raskladnoi_05_1%2F2year98
-vless://0ab87a4f-da38-4203-8e1a-fb82398ef479@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mspi96kvmatras_raskladnoi_05_1%2F2year99
-vless://8a3b9487-743c-4468-bfdc-0e58af2c7401@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wnjm1oramatras_raskladnoi_05_1%2F2year100
-vless://4100b5fe-2544-48c4-8b6e-edc67f587005@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-0ywja091matras_raskladnoi_05_1%2F2year101
-vless://4d2b5797-9e1f-4441-bc4c-5163e0129713@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-sbo0mzeematras_raskladnoi_05_1%2F2year102
-vless://96635911-8f6b-4b54-875e-b179e335371a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-7v11ub0jmatras_raskladnoi_05_1%2F2year103
-vless://d6cf2fdf-936b-44b3-8382-b59c278f8a65@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-r7tm0th9matras_raskladnoi_05_1%2F2year104
-vless://cffd6cf6-2a6e-4827-9236-4fdabf7d20ec@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-enagehxxmatras_raskladnoi_05_1%2F2year105
-vless://f180d91c-d4d5-44a1-bc43-558f88dc26bc@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hdhiluz8matras_raskladnoi_05_1%2F2year106
-vless://09ec9a68-021c-45d3-b713-cee7750062b4@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-uylaydsnmatras_raskladnoi_05_1%2F2year107
-vless://e054a143-03f0-4746-a440-f201018bc755@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-pjibxtfymatras_raskladnoi_05_1%2F2year108
-vless://28e94014-f34a-4cc8-9cbe-e87cdbd66e7f@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-y6bds5u8matras_raskladnoi_05_1%2F2year109
-vless://751f1446-dc1c-4b75-ab34-9332e961de54@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rcmh6d5ematras_raskladnoi_05_1%2F2year110
-vless://dc73b416-6fa5-4753-a8d2-8d55b9192715@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mz7x7oogmatras_raskladnoi_05_1%2F2year111
-vless://381e71b5-537a-4975-b3d6-8af71ac87815@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-uer27kg3matras_raskladnoi_05_1%2F2year112
-vless://78729c45-0d55-4bfe-b785-b56c8ef99c77@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-g95mlx76matras_raskladnoi_05_1%2F2year113
-vless://73aa8cb8-7e98-466a-a8f5-ad7605208e60@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-calzwbaumatras_raskladnoi_05_1%2F2year114
-vless://af10e458-7272-4bb0-81f2-2b1f891b6f61@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hvotfxc3matras_raskladnoi_05_1%2F2year115
-vless://27e0c86c-d959-45e3-9a01-eb1985c716f4@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-nie0n9w1matras_raskladnoi_05_1%2F2year116
-vless://c9dc5d70-a2d0-48bc-9723-12c5b93bd479@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-vcma3f9smatras_raskladnoi_05_1%2F2year117
-vless://0be1f9d1-cd60-4d2d-aa00-bec04baedb35@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-yjomnhpgmatras_raskladnoi_05_1%2F2year118
-vless://afa8175f-e9c4-47ae-9dff-af5b7ef56f2a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-x7pcxi5jmatras_raskladnoi_05_1%2F2year119
-vless://1b99af0d-a756-412d-85fa-8e2c801fb9df@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-pzcyx3lematras_raskladnoi_05_1%2F2year120
-vless://43bf2705-32bb-4e9a-a661-38860d497d16@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-zfg237x4matras_raskladnoi_05_1%2F2year121
-vless://f14e7e4d-3f33-43f8-8c39-843851d7cdd9@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-yteuztlymatras_raskladnoi_05_1%2F2year122
-vless://acedd09e-9ab2-4bd9-9d64-09d661716d09@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-81j5fpr8matras_raskladnoi_05_1%2F2year123
-vless://829d471e-6454-4b9d-9e33-550d760ba24a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wbsici0qmatras_raskladnoi_05_1%2F2year124
-vless://b879b0d1-8374-4e1e-a4ae-1b9a0df4aadd@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mnhxf338matras_raskladnoi_05_1%2F2year125
-vless://6c5d15bc-5e61-4f0e-a695-e18b1194f421@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rlduihrtmatras_raskladnoi_05_1%2F2year126
-vless://d9158317-7bd8-4e0e-ba6c-ecc7c59faf48@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-s0195glpmatras_raskladnoi_05_1%2F2year127
-vless://5a6817af-32c0-4bf7-9a5c-19d3f1df7abb@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-8lkmfyblmatras_raskladnoi_05_1%2F2year128
-vless://179a98b3-5763-4a01-845b-f71e8dd2d9d6@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-gdmvurdmmatras_raskladnoi_05_1%2F2year129
-vless://5df26de3-cc5a-4a64-8bce-10f5fc0a148d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hwz9054fmatras_raskladnoi_05_1%2F2year130
-vless://549c2555-b7de-450c-8bd0-e90be7118f37@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hi0jajbtmatras_raskladnoi_05_1%2F2year131
-vless://12451cfc-2f1a-4b90-88dc-688d62dc14d1@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-05pr8x0lmatras_raskladnoi_05_1%2F2year132
-vless://7e3ec5fa-a82e-494a-b5b9-8288c84fee04@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-bt9j5hdqmatras_raskladnoi_05_1%2F2year133
-vless://69120c2e-7be7-45b1-bdbc-c957c3721689@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-i5gzz3x6matras_raskladnoi_05_1%2F2year134
-vless://47ec05bf-9f05-42b3-b849-57e54d41800e@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-4c8okqiqmatras_raskladnoi_05_1%2F2year135
-vless://0f33bcb4-c7eb-4b72-8e45-03b5768556a5@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-r9yxk643matras_raskladnoi_05_1%2F2year136
-vless://dd31c8ee-5605-42bb-9439-386e815122cf@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-gqfd9iphmatras_raskladnoi_05_1%2F2year137
-vless://1a11ebcb-1b7e-432c-b11c-c1c0d343283d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-lgwzdyjpmatras_raskladnoi_05_1%2F2year138
-vless://c6bcd75d-bd40-4d89-9234-77a402e7eac9@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-0j2c1km7matras_raskladnoi_05_1%2F2year139
-vless://61f32837-1edc-4811-9bb6-0c3227754dff@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-44f43gehmatras_raskladnoi_05_1%2F2year140
-vless://ddd26737-ac69-4042-bfd3-2e90008732ca@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ulz5ypfpmatras_raskladnoi_05_1%2F2year141
-vless://5c64d560-8ac6-43ac-9a8c-c774f6c18e43@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-tge8b2e2matras_raskladnoi_05_1%2F2year142
-vless://35ee0f83-7eb6-4979-8403-f936165117fa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-7nuqw1udmatras_raskladnoi_05_1%2F2year143
-vless://bac22efa-5f1e-4f18-adc0-3b3500bf2503@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-121wox9lmatras_raskladnoi_05_1%2F2year144
-vless://4b9552a1-36cb-4877-b243-496ce6bbcb99@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ouqpb8mgmatras_raskladnoi_05_1%2F2year145
-vless://ede38ec2-4010-4838-93db-e77c1b90c11f@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-08zc7kmhmatras_raskladnoi_05_1%2F2year146
-vless://bf6ea7cd-99cb-4e3e-b105-be87a8174521@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wm9g4kn1matras_raskladnoi_05_1%2F2year147
-vless://ec822df7-1d6f-4a05-a8e5-f3f887b88711@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rg9p0uv4matras_raskladnoi_05_1%2F2year148
-vless://1c7a30dc-08f1-42d5-820c-f19a1bb598f6@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-02uzygkbmatras_raskladnoi_05_1%2F2year149
-vless://9042b648-8f95-43ae-b583-9f81e3e47a32@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-313dth32matras_raskladnoi_05_1%2F2year150
-vless://23180d86-4963-4f1b-9b2a-aae2e0bbbf21@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-6z2koz84matras_raskladnoi_05_1%2F2year151
-vless://33430b08-5f59-4597-9e73-c39e57985c6b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2ibqa6lsmatras_raskladnoi_05_1%2F2year152
-vless://57fe9153-1f25-45b0-ad03-54263f4883c3@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ci44rw7xmatras_raskladnoi_05_1%2F2year153
-vless://550f4045-51d0-47e0-92ba-6c45b2e1fbd4@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-g31uvjdematras_raskladnoi_05_1%2F2year154
-vless://abbbc6ea-7838-457c-8068-dfbc021e4c01@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-on6a439kmatras_raskladnoi_05_1%2F2year155
-vless://fd682a31-ae44-4b1d-9c7a-429d3602b0fc@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-nlaehz4imatras_raskladnoi_05_1%2F2year156
-vless://702506cc-44ef-4aa4-bd99-6e25009572f7@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-b0j3kif4matras_raskladnoi_05_1%2F2year157
-vless://ebb47d4d-8141-406a-8e47-c578f4842ee0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-suk2fmiimatras_raskladnoi_05_1%2F2year158
-vless://8ef6ad8c-565a-4113-9b0f-b0dc58f7b73b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-chw0060wmatras_raskladnoi_05_1%2F2year159
-vless://73594c44-fb02-4cea-a411-8882b02f3677@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-3fanjhytmatras_raskladnoi_05_1%2F2year160
-vless://b5c85445-9871-47f4-9501-735eb0926fa5@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2ckxj291matras_raskladnoi_05_1%2F2year161
-vless://155d88a9-8fcb-4a2a-bca7-0e58336dc9c3@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-7pihzg98matras_raskladnoi_05_1%2F2year162
-vless://eadcd063-fbef-447b-be0c-3b16cb7d51b6@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-jkztdfvjmatras_raskladnoi_05_1%2F2year163
-vless://6aafb226-24e7-4008-9013-6e866bd510d6@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-k17k41enmatras_raskladnoi_05_1%2F2year164
-vless://2c513863-3357-461a-a69d-af1823038788@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-tl50qghbmatras_raskladnoi_05_1%2F2year165
-vless://6e078867-24bb-4a42-924e-ed94750b37e1@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-jca8c1fnmatras_raskladnoi_05_1%2F2year166
-vless://21ad720b-95a2-4d09-9995-9823be0f78b4@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-gckhxw20matras_raskladnoi_05_1%2F2year167
-vless://82c1fe1e-71ab-435b-87de-ba1490672e46@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-1zxngw6cmatras_raskladnoi_05_1%2F2year168
-vless://23a33022-f883-4012-8569-11ae6fa6a1fd@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-5uh3eh2cmatras_raskladnoi_05_1%2F2year169
-vless://959cf5a4-29ad-4e53-baed-3872bf47aa87@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-q3zd8nwjmatras_raskladnoi_05_1%2F2year170
-vless://57ecbb23-e169-4b67-8007-ed5818833f4a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-1di55rmomatras_raskladnoi_05_1%2F2year171
-vless://642aa701-4646-4698-8e29-83ab068200b5@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-r7etqartmatras_raskladnoi_05_1%2F2year172
-vless://91ec7eef-6959-4658-99fa-ee0a228cf208@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-vhjbxt7omatras_raskladnoi_05_1%2F2year173
-vless://de0815ef-8d1a-4962-91bb-409a2159dbb2@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mu1ecl2ymatras_raskladnoi_05_1%2F2year174
-vless://420891aa-2963-4a0e-bc2b-dda7825d3f69@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ld0d3v3lmatras_raskladnoi_05_1%2F2year175
-vless://239bf0d5-f841-401b-af3f-23c6c57ea01c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-folc0u46matras_raskladnoi_05_1%2F2year176
-vless://8312f9f4-fb05-4dbd-ace5-725c01b6894a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ru01co8zmatras_raskladnoi_05_1%2F2year177
-vless://903baaf9-e11b-44ca-891b-cf9dbc940b54@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-oktjkrcomatras_raskladnoi_05_1%2F2year178
-vless://77382b95-07b9-4e7f-b04e-a0e9af4f4139@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-cd2xyl62matras_raskladnoi_05_1%2F2year179
-vless://2a6ec209-e268-4bc5-bf7f-e53de3f34977@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ljf7ongpmatras_raskladnoi_05_1%2F2year180
-vless://f30468e6-0a50-4139-8b27-9215cbb58361@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-l9q972q9matras_raskladnoi_05_1%2F2year181
-vless://5eed484e-6db7-44a8-b25f-5edea30efe50@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-fqjunye6matras_raskladnoi_05_1%2F2year182
-vless://a50858c6-3c54-4202-8728-41d97127a910@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-r0tsm1aumatras_raskladnoi_05_1%2F2year183
-vless://3a992ce9-3443-4241-bc69-a9da8cc6966f@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-w4kajazymatras_raskladnoi_05_1%2F2year184
-vless://b0526a73-89c6-4f68-966d-0e1170009c88@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-judxaioqmatras_raskladnoi_05_1%2F2year185
-vless://20d9f0c7-1813-4a0a-a9f3-95d73f6a0251@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ge68yw5ymatras_raskladnoi_05_1%2F2year186
-vless://795d2e6f-226a-43e9-8cf4-0b836b95bbcd@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-dba0n32fmatras_raskladnoi_05_1%2F2year187
-vless://1dd11e9a-6b36-4455-8736-aac543ec5d43@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mwidkflamatras_raskladnoi_05_1%2F2year188
-vless://7ba280fc-32d4-4183-98f5-dfaeffdb684a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-19mwf3oqmatras_raskladnoi_05_1%2F2year189
-vless://49333df7-ce46-4812-ba05-900549f2365e@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2esatgxpmatras_raskladnoi_05_1%2F2year190
-vless://c2b9fa0b-80c8-4c75-8a08-22321aa0e3e2@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-qak7aio1matras_raskladnoi_05_1%2F2year191
-vless://afdc548d-0d99-49df-bb33-b0197edb31e0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ug49ef8cmatras_raskladnoi_05_1%2F2year192
-vless://9bbf38f8-bf74-4670-8592-8de886fd26c8@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rbgup383matras_raskladnoi_05_1%2F2year193
-vless://acff6a35-7cf0-4b90-b423-1f6dafda808c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-z3vvcz65matras_raskladnoi_05_1%2F2year194
-vless://c0dbd695-748e-4dc9-8810-7275a2506687@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-sjxoqxa0matras_raskladnoi_05_1%2F2year195
-vless://a0b451a3-bd87-4cff-a257-c552dbd05e81@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-o4h0vqpzmatras_raskladnoi_05_1%2F2year196
-vless://9f76b44b-a56b-4f8e-adea-10d7bf0f374e@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-z6xhlp6omatras_raskladnoi_05_1%2F2year197
-vless://75f87156-faa2-4797-aa47-c798b3fa8ea9@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mxhf5wbfmatras_raskladnoi_05_1%2F2year198
-vless://e6cc5d2c-9a18-4b7d-b742-9a247df4d04a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-xcfjcdx4matras_raskladnoi_05_1%2F2year199
-vless://80198303-5647-44b7-84bc-9a2c789572ab@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-a7wg095xmatras_raskladnoi_05_1%2F2year200
-vless://963cac90-531d-458b-bd28-3be3cffb2318@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-3ldolp6qmatras_raskladnoi_05_1%2F2year201
-vless://2e79746d-8884-4e8c-b765-2dc6cd4d492d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-iu2ypj5ymatras_raskladnoi_05_1%2F2year202
-vless://9bb203e4-79eb-49dd-86af-08e45358f699@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-my4fvshjmatras_raskladnoi_05_1%2F2year203
-vless://eb0cc63b-753b-4f58-b4c0-a923bb7c5ea0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-uej8kth4matras_raskladnoi_05_1%2F2year204
-vless://e3b0a6be-6dd9-4eed-93ea-dcfdfeecd32a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-h4xp1jwamatras_raskladnoi_05_1%2F2year205
-vless://d5de63ae-f99d-4474-8262-b54f3fe6d062@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-y1zh0a97matras_raskladnoi_05_1%2F2year206
-vless://32574ee6-3f2e-4c0f-a87b-b3c29556da75@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-g44s46xdmatras_raskladnoi_05_1%2F2year207
-vless://17989722-a13d-451a-8ee5-8e128db113a0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hx4kobuxmatras_raskladnoi_05_1%2F2year208
-vless://a8bf7b8c-0904-4a50-b355-24e343124a0e@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-5u8o7r46matras_raskladnoi_05_1%2F2year209
-vless://1f02c14d-6e1a-4af1-971b-63806ddc10b9@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ffe7ye2nmatras_raskladnoi_05_1%2F2year210
-vless://fe9a9f06-a9f7-4533-8da1-b722e83f0ab0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ylnt2vt2matras_raskladnoi_05_1%2F2year211
-vless://9bb3573e-54ed-4fc2-b3d8-3669b1462738@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-yrbbhj9wmatras_raskladnoi_05_1%2F2year212
-vless://8c2a5f56-547c-4e77-b410-80a8812c6d0a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ey6ywt9pmatras_raskladnoi_05_1%2F2year213
-vless://3d07f1fa-90ed-4b84-9bce-c642bec718aa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-vegwlifdmatras_raskladnoi_05_1%2F2year214
-vless://ce231b9c-052e-4184-98d6-64f12e4e6954@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mt1xzq9qmatras_raskladnoi_05_1%2F2year215
-vless://22b2a625-f032-4108-adb5-b25f13df9e6e@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-vnm51fmpmatras_raskladnoi_05_1%2F2year216
-vless://402620b0-4b91-4c10-8458-81ec248afc01@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-bmvok5bkmatras_raskladnoi_05_1%2F2year217
-vless://1a11f39d-bcda-47de-897b-7f529a1bdd96@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-md665qkrmatras_raskladnoi_05_1%2F2year218
-vless://2530fd61-7e79-4fea-9923-92d12bc35241@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-go8ezvj6matras_raskladnoi_05_1%2F2year219
-vless://b722a0ea-9ba1-4da4-b1c6-a1d1c609c101@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-ume09mqpmatras_raskladnoi_05_1%2F2year220
-vless://98e7842f-ed0b-4f88-ad99-0e5353faf285@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-s6autsfjmatras_raskladnoi_05_1%2F2year221
-vless://997a4c32-02f8-451c-bb4c-2b1501c7d7a8@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-6kpbhfvnmatras_raskladnoi_05_1%2F2year222
-vless://cce0cc6b-8c94-4a94-96ef-4c5c1895a3ae@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hyaffcrumatras_raskladnoi_05_1%2F2year223
-vless://c1ae4be7-66e5-4c70-bca9-3f3cdd0e71c3@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-582njzjematras_raskladnoi_05_1%2F2year224
-vless://31339f4b-0cd4-4698-8e9a-8cca62c4d869@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-1isdjdgamatras_raskladnoi_05_1%2F2year225
-vless://85c4eec7-56f2-45c6-a856-cd0fa0e4c0a3@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-g2shesoomatras_raskladnoi_05_1%2F2year226
-vless://890a095b-c499-45f6-ba8b-2d461de5d7a5@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-iwahxo7fmatras_raskladnoi_05_1%2F2year227
-vless://4f57906b-310f-4aa0-8ed1-f4e022ea0daa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-i848u9etmatras_raskladnoi_05_1%2F2year228
-vless://6ec1a32c-e700-4fc9-87a4-87cdfecb7e59@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-vm10xdmjmatras_raskladnoi_05_1%2F2year229
-vless://da85a362-421d-447b-bdff-6ff7ab7ef49b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2e08l6tlmatras_raskladnoi_05_1%2F2year230
-vless://ab726544-aa66-4dd5-8c22-dc6d6697e1aa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-4gybah9jmatras_raskladnoi_05_1%2F2year231
-vless://ecaff535-bbf5-4653-9d55-a6ed5d2e1969@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-vwoq13ncmatras_raskladnoi_05_1%2F2year232
-vless://5a202e02-7397-4c72-b3b2-6170900486ac@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-55emu6bnmatras_raskladnoi_05_1%2F2year233
-vless://a0937007-6070-41e2-bdca-0e8cc570a03e@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-tcny3r50matras_raskladnoi_05_1%2F2year234
-vless://477f39af-21da-4e33-892b-3a3c9a748203@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-l6ah2rgpmatras_raskladnoi_05_1%2F2year235
-vless://430c8dad-6b5f-49a8-9a18-52209a61c85b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-qmzcv81fmatras_raskladnoi_05_1%2F2year236
-vless://a28b0f47-e08c-4144-928f-967f3fdbc197@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-qws2w6h1matras_raskladnoi_05_1%2F2year237
-vless://0662c721-3894-4a2f-bbd6-a21ff7e2883b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-kr49gu9bmatras_raskladnoi_05_1%2F2year238
-vless://1513d650-6bf5-426b-aef9-9673d40327ac@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-g5eb8s02matras_raskladnoi_05_1%2F2year239
-vless://fcb431b4-f383-455d-8a18-ae0ca22c225b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-u9eztelymatras_raskladnoi_05_1%2F2year240
-vless://6ac506f8-73c5-4983-93c2-8e315a652014@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2a6mpn5imatras_raskladnoi_05_1%2F2year241
-vless://54e8ca56-47a9-46c5-8d92-6b4b39f865a2@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-sclxb357matras_raskladnoi_05_1%2F2year242
-vless://e273005a-a276-4712-82ee-f67ed8dbca34@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2lpfqqwqmatras_raskladnoi_05_1%2F2year243
-vless://3d464788-e195-4e69-bcb6-40e975dd920d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-4idiys6vmatras_raskladnoi_05_1%2F2year244
-vless://23b1b72e-8537-45df-8343-a8ec286e7515@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-1m7pmqpcmatras_raskladnoi_05_1%2F2year245
-vless://3fbd8093-fe42-4af2-befc-9da9c683e660@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-lp2yhca3matras_raskladnoi_05_1%2F2year246
-vless://46cd8f1a-9147-4db0-9071-44e7a99a4621@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-qhpqnjfxmatras_raskladnoi_05_1%2F2year247
-vless://d4d06a0f-094b-409a-b2bf-28052cdb8332@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-7learpsrmatras_raskladnoi_05_1%2F2year248
-vless://5d20867f-f2af-40ca-88d0-4edf695cc0b1@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-4kt7tm5kmatras_raskladnoi_05_1%2F2year249
-vless://d1d5f7de-492b-42ee-9df6-ff0fde2856ab@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-gfoknhugmatras_raskladnoi_05_1%2F2year250
-vless://8421ee65-bce7-4146-ac38-8d10af176976@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rwyigxsamatras_raskladnoi_05_1%2F2year251
-vless://94a83687-fc9f-42c3-871b-26cdcf3878aa@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-5c0vpa46matras_raskladnoi_05_1%2F2year252
-vless://475ed1d7-4cba-46d7-896a-14acc5fc17ba@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-8qgt3txnmatras_raskladnoi_05_1%2F2year253
-vless://cff1bed0-875e-42a7-bf2a-9341092dda0f@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-3zcreyynmatras_raskladnoi_05_1%2F2year254
-vless://d13dd7e0-7921-40dc-a34d-78c990146ecb@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-j8e8zw78matras_raskladnoi_05_1%2F2year255
-vless://d9120674-6a69-4e06-9694-0334a5fbac81@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-yz2bdlc6matras_raskladnoi_05_1%2F2year256
-vless://a9151e62-d46f-47b5-8954-4a51ea8e80b4@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-fsn8lys7matras_raskladnoi_05_1%2F2year257
-vless://d8973cf7-152a-4f8d-a1be-db89c6d03666@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-xizeroqqmatras_raskladnoi_05_1%2F2year258
-vless://bfe66762-48b8-4d5a-b2e2-6dba69da2ed8@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-z3icekuwmatras_raskladnoi_05_1%2F2year259
-vless://4f596afc-5e33-4700-881f-c49ed8958292@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-b6zmobgpmatras_raskladnoi_05_1%2F2year260
-vless://23a8c7f3-c081-4ec7-aafa-e4819dc4b73a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2xfvzcrymatras_raskladnoi_05_1%2F2year261
-vless://972247aa-f279-48bb-a215-e5aaab07db55@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-1mhjrollmatras_raskladnoi_05_1%2F2year262
-vless://8f77f04b-4c42-4f32-883e-0c6b105e2256@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wd1bec8tmatras_raskladnoi_05_1%2F2year263
-vless://5dbd1721-6c99-4203-91a4-2b3ba826c09f@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-y7qb9l9rmatras_raskladnoi_05_1%2F2year264
-vless://89fe7099-0baf-431b-bc2b-17a84f25e052@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-9y5fyihrmatras_raskladnoi_05_1%2F2year265
-vless://9fe78b2b-7893-4f1a-ad4b-ce9b55a5e6a9@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-8ss8ixf8matras_raskladnoi_05_1%2F2year266
-vless://49e4203b-13a4-4ac7-bc7b-39a1427d8d8d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-aezfm58gmatras_raskladnoi_05_1%2F2year267
-vless://3c8dd912-3cdd-48d0-b59a-7735d40a8b67@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-z3ciajxymatras_raskladnoi_05_1%2F2year268
-vless://d163bfae-9ab7-40e0-835f-f66d7bbd5f56@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rzaihyvmmatras_raskladnoi_05_1%2F2year269
-vless://29c184a7-b389-4692-a66d-33f56b5d47b8@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-courr1kxmatras_raskladnoi_05_1%2F2year270
-vless://49c27338-eae1-4c21-bdd1-d70d7cb24b98@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-vma4dpdrmatras_raskladnoi_05_1%2F2year271
-vless://f5a6c1c4-fc59-469e-a850-bb55f915860f@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-pa3azpfumatras_raskladnoi_05_1%2F2year272
-vless://fb4753ac-b9ac-4dbd-ab2a-375de5fb382d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2sp3vphbmatras_raskladnoi_05_1%2F2year273
-vless://519db7ef-57de-4c66-bf59-c243b86d6590@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-88pqbr2mmatras_raskladnoi_05_1%2F2year274
-vless://0a14ed4e-18ad-4283-8874-0946f02c9dcc@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hm5ohwmematras_raskladnoi_05_1%2F2year275
-vless://131d88db-101a-43f9-aaad-54ca6861f054@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-31ze1uknmatras_raskladnoi_05_1%2F2year276
-vless://ae49779e-6c31-44ed-8fff-73c4a9460f9c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-a2cl2lfpmatras_raskladnoi_05_1%2F2year277
-vless://8b407740-7765-4bb5-8495-3367bb8fcce8@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-u4va57evmatras_raskladnoi_05_1%2F2year278
-vless://c89f5f10-8771-4119-8251-71e0e12e358d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-0ugilvodmatras_raskladnoi_05_1%2F2year279
-vless://31552d14-2ca0-4383-bf13-5482aa0fd5d2@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-3ohld9samatras_raskladnoi_05_1%2F2year280
-vless://c2814b34-32ef-4d45-91a3-f4d056fb7d9f@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-gstwa8hzmatras_raskladnoi_05_1%2F2year281
-vless://eb962ab8-766d-49ce-8e91-b4fca4d6be5c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-yfnx05wsmatras_raskladnoi_05_1%2F2year282
-vless://1afacce7-8c1a-4be0-a2e1-1c7b071ea869@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-bt1swfggmatras_raskladnoi_05_1%2F2year283
-vless://b4d5a23c-a09e-4e33-a0a9-397b0d123cac@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-g391et04matras_raskladnoi_05_1%2F2year284
-vless://6f261c43-20ae-4311-a308-e0eb83227f27@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rhm2hzklmatras_raskladnoi_05_1%2F2year285
-vless://012a7109-e223-497e-a4af-931542097b38@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2t0yog0imatras_raskladnoi_05_1%2F2year286
-vless://55c21e60-c97e-46c2-ad44-bf3ea20c91ae@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-wsr3wphgmatras_raskladnoi_05_1%2F2year287
-vless://4144e13d-8354-4879-81e8-bf2168090f5b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-7siclwx4matras_raskladnoi_05_1%2F2year288
-vless://73d2395f-8f0e-46fb-bf03-df1a7c8c4cf0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-lg4fq7evmatras_raskladnoi_05_1%2F2year289
-vless://ca36420d-e30c-45e6-b384-26f99573deea@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-647s3xb6matras_raskladnoi_05_1%2F2year290
-vless://027961d1-751c-47f1-9563-c438f9f7200c@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-hwqlmse7matras_raskladnoi_05_1%2F2year291
-vless://12983136-0f43-4bdc-8689-26c9ae2f9664@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-m2if1dmhmatras_raskladnoi_05_1%2F2year292
-vless://fab54fff-d15d-4837-ab5d-c2b2d72c9c3a@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-z584lsiumatras_raskladnoi_05_1%2F2year293
-vless://4cdcfa0c-6488-4c4d-a93a-c2a7ad569e7b@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-iwbhpxp4matras_raskladnoi_05_1%2F2year294
-vless://7de09489-ca3f-41de-9df1-5990f0db74ef@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-iseuq0swmatras_raskladnoi_05_1%2F2year295
-vless://51779778-2dd5-4bb2-908f-c23aca0d729d@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-rv0u35iymatras_raskladnoi_05_1%2F2year296
-vless://5777c4a7-67e2-4c22-9797-d20f06dc4864@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-mnjtddjzmatras_raskladnoi_05_1%2F2year297
-vless://86181904-baae-4a21-bcdc-41794e3a29d0@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-w0asd74omatras_raskladnoi_05_1%2F2year298
-vless://7a0bcb88-a372-44a7-8e77-da3b009821bd@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-j8n0g0o7matras_raskladnoi_05_1%2F2year299
-vless://aed3a043-a705-400d-8d95-cb8c246ec200@84.200.91.176:2053/?type=tcp&security=reality&pbk=XzPwlqm8iaWQPy3tKXISfs5Yko_T-_yVJGeFDNtS3Xs&fp=chrome&sni=www.samsung.com&sid=3e&spx=%2F&flow=xtls-rprx-vision#matras_raskladnoi_05_1%2F2year-2kk96xcomatras_raskladnoi_05_1%2F2year300`;
-    const vlessList = raw.trim().split(/\r?\n/);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    function parseId() {
-      const sp = new URLSearchParams(location.search);
-      const idRaw = sp.get('id');
-      if (!idRaw) return null;
-      const n = parseInt(idRaw, 10);
-      if (!Number.isFinite(n) || n < 1 || n > vlessList.length) return null;
-      return n;
+    function getId(){
+      const id = parseInt(new URLSearchParams(location.search).get('id'), 10);
+      return Number.isFinite(id) ? id : null;
     }
 
-    function toV2rayNgLink(vless) {
-      return "v2rayng://install-config?url=" + encodeURIComponent(vless);
+    async function ensureSW(){
+      if(!('serviceWorker' in navigator)) return;
+      try{
+        const reg = await navigator.serviceWorker.register('/sw.js', {scope:'/'});
+        if(!navigator.serviceWorker.controller){
+          await new Promise(r => setTimeout(r, 200));
+        }
+      }catch(e){}
     }
 
-    function toIntentLink(vless) {
-      const qs = "install-config?url=" + encodeURIComponent(vless);
-      return "intent://" + qs + "#Intent;scheme=v2rayng;package=com.v2ray.ang;end";
+    async function fetchVLESS(id){
+      const res = await fetch('/sub?id='+id, {cache:'no-store'});
+      if(!res.ok) throw new Error('sub '+res.status);
+      return (await res.text()).trim();
     }
 
-    (function main() {
-      const id = parseId();
+    function v2rayngLink(vless){
+      return 'v2rayng://install-config?url='+encodeURIComponent(vless);
+    }
+    function androidIntent(vless){
+      const qs = 'install-config?url='+encodeURIComponent(vless);
+      return 'intent://'+qs+'#Intent;scheme=v2rayng;package=com.v2ray.ang;end';
+    }
+    function shadowrocketSubLink(subUrl){
+      return 'shadowrocket://add/sub?url='+encodeURIComponent(subUrl);
+    }
+
+    (async function main(){
       const status = document.getElementById('status');
-      const help = document.getElementById('help');
-      const deepA = document.getElementById('deepLink');
-      const intentA = document.getElementById('intentLink');
+      const actions = document.getElementById('actions');
+      const errEl = document.getElementById('err');
+      const openPrimary = document.getElementById('openPrimary');
+      const openAlt = document.getElementById('openAlt');
+      const iosHelp = document.getElementById('iosHelp');
+      const subUrlEl = document.getElementById('subUrl');
 
-      if (!id) {
-        status.textContent = "Нужен параметр ?id=1.." + String(vlessList.length);
-        help.classList.remove('hidden');
-        return;
+      const id = getId();
+      if(!id){ status.textContent='Нужен параметр ?id=1..300'; actions.classList.remove('hidden'); errEl.textContent='Параметр ?id= отсутствует.'; return; }
+
+      await ensureSW();
+
+      const subUrl = location.origin + '/sub?id=' + id; // для iOS подписки
+      try{
+        const vless = await fetchVLESS(id);
+
+        if(isAndroid){
+          const deep = v2rayngLink(vless);
+          const alt = androidIntent(vless);
+
+          // мгновенный переход
+          try{ location.replace(deep); }catch(e){}
+          // мета‑редирект как дубль
+          const meta=document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+deep; document.head.appendChild(meta);
+
+          // показать кнопки на случай блокировки in-app браузером
+          setTimeout(()=> {
+            status.textContent='Если не открылось — нажми кнопку ниже.';
+            actions.classList.remove('hidden');
+            openPrimary.href = deep; openPrimary.textContent='Открыть в v2rayNG/v2rayTun';
+            openAlt.href = alt; openAlt.textContent='Через intent';
+          }, 1200);
+          return;
+        }
+
+        if(isIOS){
+          // Основной путь для iOS — подписка Shadowrocket
+          const rocket = shadowrocketSubLink(subUrl);
+          try{ location.replace(rocket); }catch(e){}
+          const meta=document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+rocket; document.head.appendChild(meta);
+
+          setTimeout(()=> {
+            status.textContent='Нажми “Открыть” для импорта в Shadowrocket.';
+            actions.classList.remove('hidden');
+            openPrimary.href = rocket; openPrimary.textContent='Открыть в Shadowrocket';
+            openAlt.href = subUrl; openAlt.textContent='Показать ссылку подписки';
+            iosHelp.classList.remove('hidden'); subUrlEl.textContent=subUrl;
+          }, 1200);
+          return;
+        }
+
+        // Десктоп/прочее — показать ссылку подписки
+        status.textContent='Открой на телефоне по ссылке подписки (или скопируй конфиг).';
+        actions.classList.remove('hidden');
+        openPrimary.href = subUrl; openPrimary.textContent='Ссылка подписки (iOS)';
+        openAlt.href = v2rayngLink(vless); openAlt.textContent='Ссылка (Android)';
+        iosHelp.classList.remove('hidden'); subUrlEl.textContent=subUrl;
+
+      }catch(e){
+        status.textContent='Ошибка загрузки ключа.';
+        actions.classList.remove('hidden');
+        errEl.textContent='Ключ не найден или сервис‑воркер не активировался. Обнови страницу и проверь ?id=1..300.';
       }
-
-      const idx = id - 1;
-      const vless = vlessList[idx];
-      if (!vless) {
-        status.textContent = "Ключ не найден";
-        help.classList.remove('hidden');
-        return;
-      }
-
-      const deep = toV2rayNgLink(vless);
-      const intent = toIntentLink(vless);
-
-      deepA.setAttribute('href', deep);
-      intentA.setAttribute('href', intent);
-
-      try { location.replace(deep); } catch (e) {}
-      const meta = document.createElement('meta');
-      meta.setAttribute('http-equiv', 'refresh');
-      meta.setAttribute('content', '0;url=' + deep);
-      document.head.appendChild(meta);
-
-      setTimeout(() => {
-        status.textContent = "Если не открылось — нажмите кнопку ниже.";
-        help.classList.remove('hidden');
-      }, 1200);
     })();
   </script>
 </body>
