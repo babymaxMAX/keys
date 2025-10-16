@@ -1,72 +1,149 @@
 <!doctype html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>v2rayTun авто‑импорт</title>
+  <title>LsJ VPN — Подключение</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111111">
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding:24px;max-width:880px;margin:0 auto}
-    h1{font-size:24px;margin:0 0 12px}
-    .muted{color:#555}.err{color:#b00020}.hidden{display:none}
-    a.btn{display:inline-block;padding:12px 16px;background:#0b57d0;color:#fff;border-radius:10px;text-decoration:none}
-    a.btn.secondary{background:#5f6368}
-    code{background:#f6f8fa;padding:0 4px;border-radius:4px}
-    .row{margin-top:16px}
+    :root{
+      --bg-1:#0b0b0f;
+      --bg-2:#101218;
+      --brand:#f7c23e;          /* золото LsJ */
+      --brand-2:#ff9900;        /* акцент */
+      --text:#e9edf3;
+      --muted:#a7adba;
+      --card:#141825;
+      --card-2:#0f1420;
+      --glow:rgba(247,194,62,0.25);
+    }
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text); background: radial-gradient(1200px 800px at 70% -10%, #1c2135 0%, transparent 70%),
+                                      radial-gradient(900px 700px at 0% 100%, #1b1626 0%, transparent 65%),
+                                      linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", "Segoe UI Emoji";
+      display:grid; place-items:center;
+    }
+    .wrap{
+      width:min(720px, 92vw);
+      padding:28px 24px 32px;
+      border-radius:18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) padding-box,
+        radial-gradient(120% 180% at 0% 0%, rgba(255,255,255,0.06), rgba(255,255,255,0.01)) border-box;
+      border:1px solid rgba(255,255,255,0.08);
+      box-shadow:
+        0 10px 35px rgba(0,0,0,0.45),
+        0 0 0 2px rgba(255,255,255,0.02) inset,
+        0 0 80px 0 var(--glow);
+      backdrop-filter: blur(6px);
+    }
+    .brand{
+      display:flex; align-items:center; gap:16px; margin-bottom:8px;
+    }
+    .logo{
+      width:64px; height:64px; border-radius:50%;
+      display:grid; place-items:center;
+      background: radial-gradient(circle at 50% 40%, var(--brand) 0%, var(--brand-2) 60%, #a96700 100%);
+      box-shadow: 0 0 30px var(--glow), 0 8px 24px rgba(0,0,0,0.45);
+      transform: translateZ(0);
+    }
+    .logo svg{ filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35)); }
+    .title{
+      line-height:1.1;
+      font-weight:800;
+      letter-spacing:0.2px;
+      font-size:28px;
+    }
+    .subtitle{
+      color:var(--muted);
+      margin:0 0 22px 80px;
+      letter-spacing:0.2px;
+    }
+    .btn{
+      -webkit-tap-highlight-color: rgba(0,0,0,0);
+      appearance:none; border:none; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center; gap:12px;
+      font-weight:700; font-size:18px; letter-spacing:0.2px;
+      border-radius:14px; padding:18px 22px; min-height:58px; width:100%;
+      transition: transform .08s ease, box-shadow .15s ease, filter .15s ease;
+      text-decoration:none; color:#151515;
+    }
+    .btn:active{ transform: translateY(1px) scale(.995); }
+    .btn-primary{
+      background: linear-gradient(180deg, var(--brand) 0%, var(--brand-2) 85%);
+      box-shadow:
+        0 15px 40px rgba(247,194,62,0.25),
+        0 2px 0 0 rgba(255,255,255,0.2) inset;
+    }
+    .btn-primary:hover{ filter: brightness(1.02); box-shadow: 0 18px 50px rgba(247,194,62,0.3), 0 2px 0 rgba(255,255,255,0.25) inset; }
+    .btn-ghost{
+      color:var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border:1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .btn-ghost:hover{ border-color: rgba(255,255,255,0.18); background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); }
+    .grid{ display:grid; gap:14px; grid-template-columns:1fr; }
+    .note{ color:var(--muted); margin:18px 0 0; text-align:center; font-size:13px; }
+    .toast{
+      position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(30px);
+      background:#0f1220; color:var(--text); border:1px solid rgba(255,255,255,0.12);
+      padding:10px 14px; border-radius:10px; opacity:0; transition:.22s ease; pointer-events:none;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+      font-size:14px;
+    }
+    .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+    .hid{ display:none; }
   </style>
 </head>
 <body>
-  <h1>Авто‑импорт в v2rayTun</h1>
-  <p id="status" class="muted">Готовим конфигурацию…</p>
-
-  <div id="ui" class="hidden">
-    <p id="err" class="err hidden"></p>
-
-    <div id="inapp" class="hidden row">
-      Открыто во встроенном просмотрщике. Нажми «Открыть в браузере», затем «Открыть v2rayTun».
-      <div class="row"><a id="openExternal" class="btn secondary" href="#" rel="noopener">Открыть в браузере</a></div>
+  <main class="wrap">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="#111"><path d="M12 2l.894 2.763h2.905l-2.351 1.708.897 2.762L12 7.525 9.655 9.233l.897-2.762L8.2 4.763h2.905L12 2z"/></svg>
+      </div>
+      <div>
+        <div class="title">LsJ VPN</div>
+        <div class="subtitle">Comrades • Premium Access</div>
+      </div>
     </div>
 
-    <div class="row">
-      <a id="btnOpen" class="btn" href="#" rel="noopener">Открыть v2rayTun</a>
-      <a id="btnSub" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Через подписку</a>
+    <div class="grid" style="margin-top:14px">
+      <a id="btnConnect" class="btn btn-primary" href="#">🚀 Подключиться к VPN</a>
+      <button id="btnCopy" class="btn btn-ghost" type="button">📋 Скопировать ключ</button>
     </div>
 
-    <div class="row">
-      <p class="muted">Если не сработало — ссылка подписки для ручного импорта:</p>
-      <p><a id="subLink" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
-      <p class="muted">Адрес: <code id="subTxt"></code></p>
-    </div>
-  </div>
+    <p id="hint" class="note hid">Открой во внешнем браузере, если мессенджер блокирует переход.</p>
+  </main>
+
+  <div id="toast" class="toast">Скопировано</div>
 
   <script>
-    const ua = navigator.userAgent||"";
+    const ua = navigator.userAgent || "";
     const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
     const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
 
     const qs = new URLSearchParams(location.search);
-    const id = parseInt(qs.get('id'),10);
+    const id = parseInt(qs.get('id'), 10);
 
-    const statusEl = document.getElementById('status');
-    const ui = document.getElementById('ui');
-    const errEl = document.getElementById('err');
-    const inapp = document.getElementById('inapp');
-    const openExternal = document.getElementById('openExternal');
-    const btnOpen = document.getElementById('btnOpen');
-    const btnSubBtn = document.getElementById('btnSub');
-    const subLink = document.getElementById('subLink');
-    const subTxt = document.getElementById('subTxt');
+    const btnConnect = document.getElementById('btnConnect');
+    const btnCopy = document.getElementById('btnCopy');
+    const toast = document.getElementById('toast');
+    const hint = document.getElementById('hint');
 
-    if(!Number.isFinite(id) || id < 1){
-      statusEl.textContent = 'Нужен параметр ?id=1..300';
+    const statusText = document.querySelector('.subtitle');
+
+    if (!Number.isFinite(id) || id < 1) {
+      statusText.textContent = 'Нужен параметр ?id=1..300';
     } else {
-      run().catch(e=>{
-        ui.classList.remove('hidden');
-        errEl.classList.remove('hidden');
-        errEl.textContent = 'Ошибка: ' + (e && e.message ? e.message : 'не удалось подготовить ссылку');
+      init().catch(err=>{
+        statusText.textContent = 'Ошибка загрузки ключа';
+        console.error(err);
       });
     }
 
-    // SW нужен лишь для /sub; если не взлетит — просто продолжим
     async function ensureSW(){
       if(!('serviceWorker' in navigator)) return;
       try{
@@ -75,55 +152,53 @@
       }catch(_){}
     }
 
-    async function getVLESS(n){
-      const r = await fetch('/sub?id='+n,{cache:'no-store'});
-      if(!r.ok) throw new Error('sub?id='+n+' недоступен');
-      return (await r.text()).trim();
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    function mkDeepFromVless(vless){
+    function toDeepLinkFromVless(vless){
       return 'v2raytun://import/' + encodeURIComponent(vless);
     }
-    function mkDeepFromSub(subUrl){
-      return 'v2raytun://import/' + encodeURIComponent(subUrl);
-    }
 
-    async function run(){
+    async function init(){
       await ensureSW();
 
-      statusEl.textContent = 'Загружаем ключ…';
-      const vless = await getVLESS(id);
-      if(!/^vless:\/\//i.test(vless)) throw new Error('Ключ не vless://');
+      const subUrl = '/sub?id=' + id;
+      const r = await fetch(subUrl, { cache: 'no-store' });
+      if(!r.ok) throw new Error('sub?id='+id+' not ok');
+      const vless = (await r.text()).trim();
+      if(!/^vless:\/\//i.test(vless)) throw new Error('not vless');
 
-      // Основной диплинк: импорт одной VLESS‑ссылки
-      const deeplink = mkDeepFromVless(vless);
+      const deep = toDeepLinkFromVless(vless);
 
-      // Альтернатива: импорт подписки (тот же id)
-      const subUrl = location.origin + '/sub?id=' + id;
-      const subDeep = mkDeepFromSub(subUrl);
+      // Кнопка "Подключиться к VPN"
+      btnConnect.setAttribute('href', deep);
+      btnConnect.addEventListener('click', (e)=>{ /* просто перейти по ссылке */ });
 
-      // Кнопки/подписка
-      btnOpen.href = deeplink;
-      btnSubBtn.href = subDeep;
-      subLink.href = subUrl;
-      subTxt.textContent = subUrl;
+      // Кнопка "Скопировать ключ"
+      btnCopy.addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(vless);
+          showToast('Ключ скопирован');
+        }catch{
+          // Фолбэк через textarea
+          const ta = document.createElement('textarea');
+          ta.value = vless;
+          document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy');
+          ta.remove();
+          showToast('Ключ скопирован');
+        }
+      });
 
-      ui.classList.remove('hidden');
+      // Hint для встроенных браузеров
+      if(isInApp) hint.classList.remove('hid');
 
-      if(isInApp){
-        inapp.classList.remove('hidden');
-        openExternal.addEventListener('click',(e)=>{ e.preventDefault(); window.open(location.href,'_blank'); });
-        statusEl.textContent = 'Нажми «Открыть в браузере», затем «Открыть v2rayTun».';
-        return;
-      }
-
-      // Автозапуск: сначала импорт одной VLESS, через секунду — импорт по подписке как дубль
-      statusEl.textContent = 'Пробуем авто‑импорт…';
-      if(isMobile){
-        try{ location.href = deeplink; }catch(_){}
-        setTimeout(()=>{ try{ location.href = subDeep; }catch(_){}} , 1000);
-      }else{
-        statusEl.textContent = 'Открой на телефоне или нажми кнопку.';
+      // (Опционально) Автозапуск на телефоне, если не внутри мессенджера
+      if(isMobile && !isInApp){
+        try{ location.href = deep; }catch(_){}
       }
     }
   </script>
