@@ -28,12 +28,12 @@
 
     <div class="row">
       <a id="btnOpen" class="btn" href="#" rel="noopener">Открыть v2rayTun</a>
-      <a id="btnAlt" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Альтернатива</a>
+      <a id="btnSub" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Через подписку</a>
     </div>
 
     <div class="row">
       <p class="muted">Если не сработало — ссылка подписки для ручного импорта:</p>
-      <p><a id="sub" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
+      <p><a id="subLink" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
       <p class="muted">Адрес: <code id="subTxt"></code></p>
     </div>
   </div>
@@ -44,7 +44,7 @@
     const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
 
     const qs = new URLSearchParams(location.search);
-    const id = parseInt(qs.get('id'), 10);
+    const id = parseInt(qs.get('id'),10);
 
     const statusEl = document.getElementById('status');
     const ui = document.getElementById('ui');
@@ -52,75 +52,78 @@
     const inapp = document.getElementById('inapp');
     const openExternal = document.getElementById('openExternal');
     const btnOpen = document.getElementById('btnOpen');
-    const btnAlt = document.getElementById('btnAlt');
-    const sub = document.getElementById('sub');
+    const btnSubBtn = document.getElementById('btnSub');
+    const subLink = document.getElementById('subLink');
     const subTxt = document.getElementById('subTxt');
 
-    if (!Number.isFinite(id) || id < 1) {
+    if(!Number.isFinite(id) || id < 1){
       statusEl.textContent = 'Нужен параметр ?id=1..300';
     } else {
-      run().catch(e => {
+      run().catch(e=>{
         ui.classList.remove('hidden');
         errEl.classList.remove('hidden');
         errEl.textContent = 'Ошибка: ' + (e && e.message ? e.message : 'не удалось подготовить ссылку');
       });
     }
 
-    async function fetchKeys() {
-      const r = await fetch('/keys.txt', { cache: 'no-store' });
-      if (!r.ok) throw new Error('keys.txt недоступен');
-      const text = await r.text();
-      return text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    // SW нужен лишь для /sub; если не взлетит — просто продолжим
+    async function ensureSW(){
+      if(!('serviceWorker' in navigator)) return;
+      try{
+        await navigator.serviceWorker.register('/sw.js',{scope:'/'});
+        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,150));
+      }catch(_){}
     }
 
-    // v2rayTun: v2raytun://import/{ENCODED_PAYLOAD}
-    function makeDeepLinkFromVless(vless) {
+    async function getVLESS(n){
+      const r = await fetch('/sub?id='+n,{cache:'no-store'});
+      if(!r.ok) throw new Error('sub?id='+n+' недоступен');
+      return (await r.text()).trim();
+    }
+
+    function mkDeepFromVless(vless){
       return 'v2raytun://import/' + encodeURIComponent(vless);
     }
-
-    // запасной редиректор (на тот же диплинк) через /open?to= (https ссылка, кликабельна в мессенджерах)
-    function makeHttpsRedirect(deeplink) {
-      return location.origin + '/open.html?to=' + encodeURIComponent(deeplink);
+    function mkDeepFromSub(subUrl){
+      return 'v2raytun://import/' + encodeURIComponent(subUrl);
     }
 
-    async function run() {
-      statusEl.textContent = 'Загружаем ключи…';
-      const list = await fetchKeys();
+    async function run(){
+      await ensureSW();
 
-      if (id > list.length) {
-        statusEl.textContent = 'Ключ с таким id отсутствует';
-        return;
-      }
+      statusEl.textContent = 'Загружаем ключ…';
+      const vless = await getVLESS(id);
+      if(!/^vless:\/\//i.test(vless)) throw new Error('Ключ не vless://');
 
-      const vless = list[id - 1]; // 1‑based
-      if (!/^vless:\/\//i.test(vless)) {
-        throw new Error('Строка ключа не начинается с vless://');
-      }
+      // Основной диплинк: импорт одной VLESS‑ссылки
+      const deeplink = mkDeepFromVless(vless);
 
-      const deep = makeDeepLinkFromVless(vless);
-      const alt = makeHttpsRedirect(deep);
+      // Альтернатива: импорт подписки (тот же id)
+      const subUrl = location.origin + '/sub?id=' + id;
+      const subDeep = mkDeepFromSub(subUrl);
 
-      btnOpen.href = deep;
-      btnAlt.href = alt;
-
-      const subUrl = location.origin + '/keys.txt'; // простой «список ссылок» как подписка
-      sub.href = subUrl;
+      // Кнопки/подписка
+      btnOpen.href = deeplink;
+      btnSubBtn.href = subDeep;
+      subLink.href = subUrl;
       subTxt.textContent = subUrl;
 
       ui.classList.remove('hidden');
-      if (isInApp) {
+
+      if(isInApp){
         inapp.classList.remove('hidden');
-        openExternal.addEventListener('click', (e) => { e.preventDefault(); window.open(location.href, '_blank'); });
+        openExternal.addEventListener('click',(e)=>{ e.preventDefault(); window.open(location.href,'_blank'); });
         statusEl.textContent = 'Нажми «Открыть в браузере», затем «Открыть v2rayTun».';
-      } else {
-        statusEl.textContent = 'Пробуем авто‑импорт…';
-        // Автозапуск: сначала сразу диплинк, затем безопасный дубль через редиректор
-        if (isMobile) {
-          try { location.href = deep; } catch(e) {}
-          setTimeout(() => { try { location.href = alt; } catch(e) {} }, 900);
-        } else {
-          statusEl.textContent = 'Открой на телефоне или нажми кнопку.';
-        }
+        return;
+      }
+
+      // Автозапуск: сначала импорт одной VLESS, через секунду — импорт по подписке как дубль
+      statusEl.textContent = 'Пробуем авто‑импорт…';
+      if(isMobile){
+        try{ location.href = deeplink; }catch(_){}
+        setTimeout(()=>{ try{ location.href = subDeep; }catch(_){}} , 1000);
+      }else{
+        statusEl.textContent = 'Открой на телефоне или нажми кнопку.';
       }
     }
   </script>
