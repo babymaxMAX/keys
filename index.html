@@ -6,32 +6,35 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding:24px;max-width:880px;margin:0 auto}
-    h1{font-size:24px;margin:0 0 12px}.muted{color:#555}.hidden{display:none}.err{color:#b00020}
+    h1{font-size:24px;margin:0 0 12px}
+    .muted{color:#555}.err{color:#b00020}.hidden{display:none}
     a.btn{display:inline-block;padding:12px 16px;background:#0b57d0;color:#fff;border-radius:10px;text-decoration:none}
-    a.btn.secondary{background:#5f6368}.row{margin-top:16px}code{background:#f6f8fa;padding:0 4px;border-radius:4px}
+    a.btn.secondary{background:#5f6368}
+    code{background:#f6f8fa;padding:0 4px;border-radius:4px}
+    .row{margin-top:16px}
   </style>
 </head>
 <body>
   <h1>Авто‑импорт в v2rayTun</h1>
-  <p id="status" class="muted">Готовим перенаправление…</p>
+  <p id="status" class="muted">Готовим конфигурацию…</p>
 
-  <div id="actions" class="hidden">
-    <p id="err" class="err"></p>
+  <div id="ui" class="hidden">
+    <p id="err" class="err hidden"></p>
 
-    <div id="inApp" class="hidden row">
-      Открой ссылку во внешнем браузере, затем нажми “Открыть v2rayTun”.
-      <div class="row"><a id="openExternal" class="btn secondary" href="#">Открыть в браузере</a></div>
+    <div id="inapp" class="hidden row">
+      Открыто во встроенном просмотрщике. Нажми «Открыть в браузере», затем «Открыть v2rayTun».
+      <div class="row"><a id="openExternal" class="btn secondary" href="#" rel="noopener">Открыть в браузере</a></div>
     </div>
 
-    <div id="buttons" class="row hidden">
-      <a id="primary" class="btn" href="#">Открыть v2rayTun</a>
-      <a id="alt" class="btn secondary" href="#" style="margin-left:8px;">Альтернатива</a>
+    <div class="row">
+      <a id="btnOpen" class="btn" href="#" rel="noopener">Открыть v2rayTun</a>
+      <a id="btnAlt" class="btn secondary" href="#" rel="noopener" style="margin-left:8px;">Альтернатива</a>
     </div>
 
-    <div id="fallback" class="row">
-      <p class="muted">Запасной вариант — подписка:</p>
-      <p><a id="subLink" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
-      <p class="muted">Адрес: <code id="subText"></code></p>
+    <div class="row">
+      <p class="muted">Если не сработало — ссылка подписки для ручного импорта:</p>
+      <p><a id="sub" class="btn secondary" href="#" target="_blank" rel="noopener">Открыть подписку</a></p>
+      <p class="muted">Адрес: <code id="subTxt"></code></p>
     </div>
   </div>
 
@@ -41,83 +44,85 @@
     const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
 
     const qs = new URLSearchParams(location.search);
-    const id = parseInt(qs.get('id'),10);
+    const id = parseInt(qs.get('id'), 10);
 
-    const status = document.getElementById('status');
-    const actions = document.getElementById('actions');
+    const statusEl = document.getElementById('status');
+    const ui = document.getElementById('ui');
     const errEl = document.getElementById('err');
-    const inApp = document.getElementById('inApp');
+    const inapp = document.getElementById('inapp');
     const openExternal = document.getElementById('openExternal');
-    const buttons = document.getElementById('buttons');
-    const primary = document.getElementById('primary');
-    const alt = document.getElementById('alt');
-    const subLink = document.getElementById('subLink');
-    const subText = document.getElementById('subText');
+    const btnOpen = document.getElementById('btnOpen');
+    const btnAlt = document.getElementById('btnAlt');
+    const sub = document.getElementById('sub');
+    const subTxt = document.getElementById('subTxt');
 
-    if(!id){ status.textContent='Нужен ?id=1..300'; actions.classList.remove('hidden'); errEl.textContent='Нет параметра id.'; }
-
-    const subUrl = location.origin + '/sub?id=' + id;
-    subLink.href = subUrl; subText.textContent = subUrl;
-
-    async function b64utf8(s){
-      const bytes = new TextEncoder().encode(s);
-      let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b));
-      return btoa(bin);
+    if (!Number.isFinite(id) || id < 1) {
+      statusEl.textContent = 'Нужен параметр ?id=1..300';
+    } else {
+      run().catch(e => {
+        ui.classList.remove('hidden');
+        errEl.classList.remove('hidden');
+        errEl.textContent = 'Ошибка: ' + (e && e.message ? e.message : 'не удалось подготовить ссылку');
+      });
     }
 
-    (async ()=>{
-      // SW для /sub
-      if('serviceWorker' in navigator){
-        try{
-          await navigator.serviceWorker.register('/sw.js',{scope:'/'});
-          if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,150));
-        }catch(_){}
+    async function fetchKeys() {
+      const r = await fetch('/keys.txt', { cache: 'no-store' });
+      if (!r.ok) throw new Error('keys.txt недоступен');
+      const text = await r.text();
+      return text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    }
+
+    // v2rayTun: v2raytun://import/{ENCODED_PAYLOAD}
+    function makeDeepLinkFromVless(vless) {
+      return 'v2raytun://import/' + encodeURIComponent(vless);
+    }
+
+    // запасной редиректор (на тот же диплинк) через /open?to= (https ссылка, кликабельна в мессенджерах)
+    function makeHttpsRedirect(deeplink) {
+      return location.origin + '/open.html?to=' + encodeURIComponent(deeplink);
+    }
+
+    async function run() {
+      statusEl.textContent = 'Загружаем ключи…';
+      const list = await fetchKeys();
+
+      if (id > list.length) {
+        statusEl.textContent = 'Ключ с таким id отсутствует';
+        return;
       }
 
-      let vless='';
-      try{
-        const r = await fetch(subUrl,{cache:'no-store'}); if(!r.ok) throw 0;
-        vless = (await r.text()).trim();
-      }catch(_){
-        status.textContent='Не удалось получить конфиг.'; actions.classList.remove('hidden'); errEl.textContent='/sub?id='+id+' не доступен'; return;
+      const vless = list[id - 1]; // 1‑based
+      if (!/^vless:\/\//i.test(vless)) {
+        throw new Error('Строка ключа не начинается с vless://');
       }
 
-      actions.classList.remove('hidden');
-      if(isInApp){ inApp.classList.remove('hidden'); openExternal.onclick=e=>{e.preventDefault(); window.open(location.href,'_blank');}; }
+      const deep = makeDeepLinkFromVless(vless);
+      const alt = makeHttpsRedirect(deep);
 
-      // Подготовим кандидатов, включая base64-параметр config=
-      const b64 = await b64utf8(vless);
-      const candidates = [
-        // наиболее вероятные для v2rayTun iOS/Android:
-        { label:'v2raytun install-config (url)', url:'v2raytun://install-config?url='+encodeURIComponent(vless) },
-        { label:'v2raytun import (url)',         url:'v2raytun://import?url='+encodeURIComponent(vless) },
-        { label:'v2raytun import (config=base64)',url:'v2raytun://import?config='+encodeURIComponent(b64) },
-        { label:'v2raytun install-config (config=base64)', url:'v2raytun://install-config?config='+encodeURIComponent(b64) },
-        // совместимые пути некоторых сборок
-        { label:'v2rayng install-config',        url:'v2rayng://install-config?url='+encodeURIComponent(vless) },
-        { label:'raw vless://',                  url:vless }
-      ];
+      btnOpen.href = deep;
+      btnAlt.href = alt;
 
-      // кнопки
-      primary.href = candidates[0].url;
-      alt.href = candidates[1].url;
-      buttons.classList.remove('hidden');
+      const subUrl = location.origin + '/keys.txt'; // простой «список ссылок» как подписка
+      sub.href = subUrl;
+      subTxt.textContent = subUrl;
 
-      // автозапуск цепочкой (на телефоне; внутри мессенджера может блокироваться)
-      status.textContent='Пробуем авто‑импорт в v2rayTun…';
-      if(isMobile){
-        let i=0, done=false;
-        const vis=()=>{ if(document.visibilityState==='hidden'){ done=true; cleanup(); } };
-        const timers=[]; function cleanup(){ document.removeEventListener('visibilitychange',vis); timers.forEach(clearTimeout); }
-        document.addEventListener('visibilitychange',vis);
-        function step(){ if(done||i>=candidates.length) return; try{ location.href=candidates[i].url; }catch(_){} i++; timers.push(setTimeout(step,900)); }
-        step();
-        // дополнительный дубль
-        const meta=document.createElement('meta'); meta.httpEquiv='refresh'; meta.content='0;url='+candidates[0].url; document.head.appendChild(meta);
-      }else{
-        status.textContent='Открой на телефоне с установленным v2rayTun.';
+      ui.classList.remove('hidden');
+      if (isInApp) {
+        inapp.classList.remove('hidden');
+        openExternal.addEventListener('click', (e) => { e.preventDefault(); window.open(location.href, '_blank'); });
+        statusEl.textContent = 'Нажми «Открыть в браузере», затем «Открыть v2rayTun».';
+      } else {
+        statusEl.textContent = 'Пробуем авто‑импорт…';
+        // Автозапуск: сначала сразу диплинк, затем безопасный дубль через редиректор
+        if (isMobile) {
+          try { location.href = deep; } catch(e) {}
+          setTimeout(() => { try { location.href = alt; } catch(e) {} }, 900);
+        } else {
+          statusEl.textContent = 'Открой на телефоне или нажми кнопку.';
+        }
       }
-    })();
+    }
   </script>
 </body>
 </html>
