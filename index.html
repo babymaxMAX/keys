@@ -145,6 +145,7 @@
   <script>
     const ua = navigator.userAgent || "";
     const isAndroid = /Android/i.test(ua);
+    const isWindows = /Windows NT|Win64|Win32/i.test(ua);
     const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
 
     const qs = new URLSearchParams(location.search);
@@ -177,12 +178,9 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // v2rayTun deep links
+    // Схемы
     function deepV2raytun(vless){ return 'v2raytun://import/' + encodeURIComponent(vless); }
-    function intentV2raytun(vless){
-      const payload = encodeURIComponent(vless);
-      return 'intent://import/' + payload + '#Intent;scheme=v2raytun;package=com.v2raytun.android;end';
-    }
+    function linkV2rayNG(vless){ return 'v2rayng://install-config?url=' + encodeURIComponent(vless); }
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
@@ -193,19 +191,28 @@
     async function init(){
       await ensureSW();
       const vless = await getVLESS();
+      const subUrl = location.origin + '/sub?id=' + id;
 
-      // iOS / Mac — рабочий диплинк
+      // iOS / Mac — оставляем рабочий диплинк V2RayTun
       const linkIOS = deepV2raytun(vless);
       btnIOS.href = linkIOS;
 
-      // Android / Windows — intent, затем fallback на v2raytun://
-      const linkIntent = intentV2raytun(vless);
-      const linkDirect = linkIOS;
+      // Android / Windows — по ТЗ:
+      // - Android: v2rayNG диплинк (главный), fallback на V2RayTun диплинк
+      // - Windows: показываем raw vless:// (если ассоциация есть), fallback — открываем страницу подписки
+      const linkNG = linkV2rayNG(vless);
+      const linkTun = linkIOS;
 
       btnAndroid.addEventListener('click', (e)=>{
         e.preventDefault();
-        try{ location.href = linkIntent; }catch(_){}
-        setTimeout(()=>{ try{ location.href = linkDirect; }catch(_){} }, 600);
+        if (isWindows){
+          try { location.href = vless; } catch(_){}
+          setTimeout(()=>{ try { location.href = subUrl; } catch(_){} }, 700);
+          return;
+        }
+        // Android
+        try { location.href = linkNG; } catch(_){}
+        setTimeout(()=>{ try { location.href = linkTun; } catch(_){} }, 700);
       });
 
       // Скопировать ключ
@@ -221,9 +228,9 @@
         }
       });
 
-      // Автопредложение на Android (вне in‑app)
+      // Автопредложение для Android вне in‑app
       if(isAndroid && !isInApp){
-        try{ location.href = linkIntent; }catch(_){}
+        try{ location.href = linkNG; }catch(_){}
       }
     }
   </script>
