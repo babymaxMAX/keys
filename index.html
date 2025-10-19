@@ -2,146 +2,168 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>LsJ VPN — Подключение</title>
+  <title>LsJ VPN — Инструкция и подключение</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111111">
   <style>
     :root{
-      --bg-1:#0b0b0f;
-      --bg-2:#101218;
-      --brand:#f7c23e;          /* золото LsJ */
-      --brand-2:#ff9900;        /* акцент */
-      --text:#e9edf3;
-      --muted:#a7adba;
-      --card:#141825;
-      --card-2:#0f1420;
-      --glow:rgba(247,194,62,0.25);
+      --bg-1:#0b0b0f; --bg-2:#101218;
+      --brand:#f7c23e; --brand-2:#ff9900;
+      --text:#e9edf3; --muted:#a7adba;
+      --card:#141825; --glow:rgba(247,194,62,0.25);
+      --line:rgba(255,255,255,0.12);
     }
     html,body{height:100%}
     body{
-      margin:0; color:var(--text); background: radial-gradient(1200px 800px at 70% -10%, #1c2135 0%, transparent 70%),
-                                      radial-gradient(900px 700px at 0% 100%, #1b1626 0%, transparent 65%),
-                                      linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      margin:0; color:var(--text);
+      background: radial-gradient(1200px 800px at 70% -10%, #1c2135 0%, transparent 70%),
+                  radial-gradient(900px 700px at 0% 100%, #1b1626 0%, transparent 65%),
+                  linear-gradient(180deg, var(--bg-1), var(--bg-2));
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", "Segoe UI Emoji";
-      display:grid; place-items:center;
     }
-    .wrap{
-      width:min(720px, 92vw);
-      padding:28px 24px 32px;
-      border-radius:18px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) padding-box,
-        radial-gradient(120% 180% at 0% 0%, rgba(255,255,255,0.06), rgba(255,255,255,0.01)) border-box;
-      border:1px solid rgba(255,255,255,0.08);
-      box-shadow:
-        0 10px 35px rgba(0,0,0,0.45),
-        0 0 0 2px rgba(255,255,255,0.02) inset,
-        0 0 80px 0 var(--glow);
+    .shell{max-width:880px; margin:0 auto; padding:28px 18px 40px}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid var(--line);
+      border-radius:18px; padding:22px 18px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.45), 0 0 80px 0 var(--glow);
       backdrop-filter: blur(6px);
     }
-    .brand{
-      display:flex; align-items:center; gap:16px; margin-bottom:8px;
-    }
+    .brand{display:flex; align-items:center; gap:16px; margin:10px 0 16px}
     .logo{
       width:64px; height:64px; border-radius:50%;
-      display:grid; place-items:center;
+      display:grid; place-items:center; flex:0 0 64px;
       background: radial-gradient(circle at 50% 40%, var(--brand) 0%, var(--brand-2) 60%, #a96700 100%);
       box-shadow: 0 0 30px var(--glow), 0 8px 24px rgba(0,0,0,0.45);
-      transform: translateZ(0);
     }
-    .logo svg{ filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35)); }
-    .title{
-      line-height:1.1;
-      font-weight:800;
-      letter-spacing:0.2px;
-      font-size:28px;
-    }
-    .subtitle{
-      color:var(--muted);
-      margin:0 0 22px 80px;
-      letter-spacing:0.2px;
-    }
+    .title{font-weight:900; font-size:28px; letter-spacing:0.2px}
+    .sub{color:var(--muted); margin-top:2px}
+    .hr{height:1px; background:var(--line); margin:18px 0}
+    .h2{font-size:18px; font-weight:800; margin:14px 0 10px}
+    p{margin:8px 0 10px; color:var(--text)}
+    .muted{color:var(--muted)}
+    ul{margin:8px 0 8px 20px}
+    .grid2{display:grid; grid-template-columns:1fr; gap:12px}
+    @media (min-width:640px){ .grid2{grid-template-columns:1fr 1fr} }
     .btn{
       -webkit-tap-highlight-color: rgba(0,0,0,0);
-      appearance:none; border:none; cursor:pointer;
-      display:inline-flex; align-items:center; justify-content:center; gap:12px;
-      font-weight:700; font-size:18px; letter-spacing:0.2px;
-      border-radius:14px; padding:18px 22px; min-height:58px; width:100%;
-      transition: transform .08s ease, box-shadow .15s ease, filter .15s ease;
-      text-decoration:none; color:#151515;
+      appearance:none; border:none; cursor:pointer; text-decoration:none;
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      font-weight:800; font-size:16px; letter-spacing:0.2px;
+      border-radius:14px; padding:14px 16px; min-height:54px; width:100%;
+      color:#101015; transition: transform .08s ease, box-shadow .14s ease, filter .14s ease;
     }
-    .btn:active{ transform: translateY(1px) scale(.995); }
+    .btn:active{ transform: translateY(1px) scale(.995) }
     .btn-primary{
-      background: linear-gradient(180deg, var(--brand) 0%, var(--brand-2) 85%);
-      box-shadow:
-        0 15px 40px rgba(247,194,62,0.25),
-        0 2px 0 0 rgba(255,255,255,0.2) inset;
+      background: linear-gradient(180deg, var(--brand) 0%, var(--brand-2) 86%);
+      box-shadow: 0 14px 36px rgba(247,194,62,0.28), 0 2px 0 rgba(255,255,255,0.18) inset;
     }
-    .btn-primary:hover{ filter: brightness(1.02); box-shadow: 0 18px 50px rgba(247,194,62,0.3), 0 2px 0 rgba(255,255,255,0.25) inset; }
     .btn-ghost{
-      color:var(--text);
-      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      border:1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      color:var(--text); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border:1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
-    .btn-ghost:hover{ border-color: rgba(255,255,255,0.18); background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); }
-    .grid{ display:grid; gap:14px; grid-template-columns:1fr; }
-    .note{ color:var(--muted); margin:18px 0 0; text-align:center; font-size:13px; }
+    .btn-store{ background: linear-gradient(180deg, #1e2435, #151a28); color:#e7ebf5; border:1px solid var(--line) }
+    .note{font-size:13px; color:var(--muted)}
     .toast{
       position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(30px);
-      background:#0f1220; color:var(--text); border:1px solid rgba(255,255,255,0.12);
+      background:#0f1220; color:var(--text); border:1px solid var(--line);
       padding:10px 14px; border-radius:10px; opacity:0; transition:.22s ease; pointer-events:none;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.55);
-      font-size:14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.55); font-size:14px;
     }
-    .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-    .hid{ display:none; }
+    .toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
+    .hid{display:none}
   </style>
 </head>
 <body>
-  <main class="wrap">
+  <div class="shell">
     <div class="brand">
       <div class="logo" aria-hidden="true">
         <svg width="34" height="34" viewBox="0 0 24 24" fill="#111"><path d="M12 2l.894 2.763h2.905l-2.351 1.708.897 2.762L12 7.525 9.655 9.233l.897-2.762L8.2 4.763h2.905L12 2z"/></svg>
       </div>
       <div>
         <div class="title">LsJ VPN</div>
-        <div class="subtitle">Comrades • Premium Access</div>
+        <div class="sub">Comrades • Premium Access</div>
       </div>
     </div>
 
-    <div class="grid" style="margin-top:14px">
-      <a id="btnConnect" class="btn btn-primary" href="#">🚀 Подключиться к VPN</a>
-      <button id="btnCopy" class="btn btn-ghost" type="button">📋 Скопировать ключ</button>
-    </div>
+    <div class="card">
+      <div style="font-size:18px; font-weight:800; margin-bottom:6px">💻 VPN Муса подпиской от LsJ</div>
+      <p>Ассаламу алейкум, дорогой брат / дорогая сестра!</p>
+      <p>Подключите стабильный и быстрый VPN на ваше устройство! Всё очень просто:</p>
 
-    <p id="hint" class="note hid">Открой во внешнем браузере, если мессенджер блокирует переход.</p>
-  </main>
+      <div class="hr"></div>
+
+      <div class="h2">🔧 Как подключиться</div>
+      <p class="muted">Прежде чем скачать — удалите все старые VPN‑приложения, очистите их профили в настройках, перезагрузите телефон и следуйте инструкции.</p>
+
+      <div class="h2">1️⃣ Скачайте и установите приложение v2raytun</div>
+      <div class="grid2">
+        <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951" target="_blank" rel="noopener"> Скачать для macOS / MacBook</a>
+        <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951?l=en-GB" target="_blank" rel="noopener"> Скачать для iPhone / iOS</a>
+        <a class="btn btn-store" href="https://play.google.com/store/apps/details?id=com.v2raytun.android&hl=ru" target="_blank" rel="noopener">🤖 Скачать для Android</a>
+        <a class="btn btn-store" href="https://storage.v2raytun.com/v2RayTun_Setup.exe" target="_blank" rel="noopener">🪟 Скачать для Windows</a>
+      </div>
+
+      <div class="h2" style="margin-top:16px">2️⃣ Добавьте персональный ключ</div>
+      <div class="grid2">
+        <!-- Кнопка №1: iOS/macOS — текущий рабочий диплинк (не меняем логику, только название) -->
+        <a id="btnIOS" class="btn btn-primary" href="#">🚀 Подключить VPN iPhone / Mac</a>
+
+        <!-- Кнопка №2: Android/Windows — тот же ключ, но через intent (Android), с резервом на v2raytun:// -->
+        <a id="btnAndroid" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
+      </div>
+
+      <div class="grid2" style="margin-top:12px">
+        <button id="btnCopy" class="btn btn-ghost" type="button">📋 Скопировать ключ</button>
+      </div>
+
+      <div class="h2" style="margin-top:16px">3️⃣ Запустите v2raytun</div>
+      <p>Откройте приложение, нажмите большую синюю кнопку — и наслаждайтесь высокой скоростью и безопасностью!</p>
+
+      <div class="hr"></div>
+
+      <div class="h2">⚠️ После подключения</div>
+      <div class="grid2">
+        <a class="btn btn-store" href="https://www.instagram.com/musa_abdullaew?igsh=MWhoMzd1Y2ozdnF0ZA%3D%3D&utm_source=qr" target="_blank" rel="noopener">📷 Подписаться в Instagram</a>
+        <a class="btn btn-store" href="https://wa.me/79634244662" target="_blank" rel="noopener">🟢 Написать в WhatsApp</a>
+      </div>
+      <p class="note">После того как всё подключите — отпишитесь нам, чтобы мы убедились, что всё работает правильно.</p>
+
+      <div class="hr"></div>
+
+      <div class="h2">🚨 ВАЖНО! НЕ ПЕРЕСЫЛАЙТЕ ЭТОТ КЛЮЧ!</div>
+      <p>Это ссылка АМАНАТ. Если вы перешлёте её кому‑либо, и он воспользуется ключом:</p>
+      <ul>
+        <li>Вы будете автоматически заблокированы на следующий день</li>
+        <li>Пользователь, получивший ссылку, также будет заблокирован</li>
+      </ul>
+      <p>Один ключ — один человек. Если кому‑то нужен VPN, пусть напишет нам — выдадим уникальный ключ.</p>
+
+      <p class="note" style="margin-top:18px">📿 Также прошу вас почитать за меня ДУА. Имя: Муса. Пусть Всевышний Аллах воздаст вам в 10‑кратном размере. Альхамдулиллях. ❤️</p>
+    </div>
+  </div>
 
   <div id="toast" class="toast">Скопировано</div>
 
   <script>
     const ua = navigator.userAgent || "";
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
     const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
 
     const qs = new URLSearchParams(location.search);
     const id = parseInt(qs.get('id'), 10);
 
-    const btnConnect = document.getElementById('btnConnect');
+    const btnIOS = document.getElementById('btnIOS');
+    const btnAndroid = document.getElementById('btnAndroid');
     const btnCopy = document.getElementById('btnCopy');
     const toast = document.getElementById('toast');
-    const hint = document.getElementById('hint');
-
-    const statusText = document.querySelector('.subtitle');
 
     if (!Number.isFinite(id) || id < 1) {
-      statusText.textContent = 'Нужен параметр ?id=1..300';
+      btnIOS.classList.add('hid');
+      btnAndroid.classList.add('hid');
+      btnCopy.classList.add('hid');
     } else {
-      init().catch(err=>{
-        statusText.textContent = 'Ошибка загрузки ключа';
-        console.error(err);
-      });
+      init().catch(console.error);
     }
 
     async function ensureSW(){
@@ -158,47 +180,54 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    function toDeepLinkFromVless(vless){
-      return 'v2raytun://import/' + encodeURIComponent(vless);
+    // v2rayTun deep links
+    function deepV2raytun(vless){ return 'v2raytun://import/' + encodeURIComponent(vless); }
+    function intentV2raytun(vless){
+      const payload = encodeURIComponent(vless);
+      return 'intent://import/' + payload + '#Intent;scheme=v2raytun;package=com.v2raytun.android;end';
+    }
+
+    async function getVLESS(){
+      const r = await fetch('/sub?id='+id, { cache:'no-store' });
+      if(!r.ok) throw new Error('sub?id='+id+' not available');
+      return (await r.text()).trim();
     }
 
     async function init(){
       await ensureSW();
+      const vless = await getVLESS();
 
-      const subUrl = '/sub?id=' + id;
-      const r = await fetch(subUrl, { cache: 'no-store' });
-      if(!r.ok) throw new Error('sub?id='+id+' not ok');
-      const vless = (await r.text()).trim();
-      if(!/^vless:\/\//i.test(vless)) throw new Error('not vless');
+      // Кнопка №1 — iOS/Mac (оставляем текущую рабочую логику)
+      const linkIOS = deepV2raytun(vless);
+      btnIOS.href = linkIOS;
 
-      const deep = toDeepLinkFromVless(vless);
+      // Кнопка №2 — Android/Windows: intent (Android) → fallback v2raytun://
+      const linkIntent = intentV2raytun(vless);
+      const linkDirect = linkIOS; // тот же payload, но схема v2raytun://
 
-      // Кнопка "Подключиться к VPN"
-      btnConnect.setAttribute('href', deep);
-      btnConnect.addEventListener('click', (e)=>{ /* просто перейти по ссылке */ });
+      btnAndroid.addEventListener('click', (e)=>{
+        e.preventDefault();
+        // Порядок попыток: intent (Android) → deep (универсальный)
+        try{ location.href = linkIntent; }catch(_){}
+        setTimeout(()=>{ try{ location.href = linkDirect; }catch(_){} }, 600);
+      });
 
-      // Кнопка "Скопировать ключ"
+      // Копировать ключ
       btnCopy.addEventListener('click', async ()=>{
         try{
           await navigator.clipboard.writeText(vless);
           showToast('Ключ скопирован');
         }catch{
-          // Фолбэк через textarea
           const ta = document.createElement('textarea');
-          ta.value = vless;
-          document.body.appendChild(ta);
-          ta.select(); document.execCommand('copy');
-          ta.remove();
+          ta.value = vless; document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy'); ta.remove();
           showToast('Ключ скопирован');
         }
       });
 
-      // Hint для встроенных браузеров
-      if(isInApp) hint.classList.remove('hid');
-
-      // (Опционально) Автозапуск на телефоне, если не внутри мессенджера
-      if(isMobile && !isInApp){
-        try{ location.href = deep; }catch(_){}
+      // Автопредложение для Android вне встроенных браузеров
+      if(isAndroid && !isInApp){
+        try{ location.href = linkIntent; }catch(_){}
       }
     }
   </script>
