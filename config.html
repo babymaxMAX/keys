@@ -14,7 +14,7 @@
 <body>
   <div class="card">
     <div style="font-weight:800;font-size:18px">Переход в приложение</div>
-    <p class="muted">Если приложение не открылось автоматически, нажмите кнопку ниже.</p>
+    <p class="muted">Если приложение не открылось, нажмите кнопку ниже.</p>
     <a class="btn" href="https://play.google.com/store/apps/details?id=com.v2raytun.android" rel="noopener" target="_blank">Перейти в магазин приложений</a>
   </div>
 
@@ -24,17 +24,17 @@
       const id = parseInt(qs.get('id'), 10);
       if(!Number.isFinite(id) || id < 1){ return; }
 
-      // Берём ТОТ ЖЕ vless-ключ, что и для iPhone
+      // тот же vless, что и для iPhone
       const r = await fetch('/sub?id=' + id, { cache:'no-store' });
       if(!r.ok){ return; }
-      const vless = (await r.text()).trim(); // vless://...
+      const vless = (await r.text()).trim();
 
-      // Формируем корректный intent на импорт именно vless-ключа
+      // import vless через intent
       const enc = encodeURIComponent(vless);
       const fb  = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
       const intent = `intent://import/${enc}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=${fb};end`;
 
-      try { location.href = intent; } catch(_) {}
+      try { location.replace(intent); } catch(_) {}
     })();
   </script>
 </body>
