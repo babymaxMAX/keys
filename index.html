@@ -94,26 +94,20 @@
       <div class="hr"></div>
 
       <div class="h2">🔧 Как подключиться</div>
-      <p class="muted">Прежде чем скачать — удалите все старые VPN‑приложения, очистите их профили, перезагрузите телефон и следуйте инструкции.</p>
+      <p class="muted">Удалите старые VPN‑приложения, очистите их профили, перезагрузите телефон и следуйте инструкции.</p>
 
-      <div class="h2">1️⃣ Скачайте и установите приложение v2raytun</div>
+      <div class="h2">1️⃣ Установите v2raytun</div>
       <div class="grid2">
-        <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951" target="_blank" rel="noopener"> Скачать для macOS / MacBook</a>
-        <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951?l=en-GB" target="_blank" rel="noopener"> Скачать для iPhone / iOS</a>
-        <a class="btn btn-store" href="https://play.google.com/store/apps/details?id=com.v2raytun.android&hl=ru" target="_blank" rel="noopener">🤖 Скачать для Android</a>
-        <a class="btn btn-store" href="https://storage.v2raytun.com/v2RayTun_Setup.exe" target="_blank" rel="noopener">🪟 Скачать для Windows</a>
+        <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951" target="_blank" rel="noopener"> macOS / MacBook</a>
+        <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951?l=en-GB" target="_blank" rel="noopener"> iPhone / iOS</a>
+        <a class="btn btn-store" href="https://play.google.com/store/apps/details?id=com.v2raytun.android&hl=ru" target="_blank" rel="noopener">🤖 Android</a>
+        <a class="btn btn-store" href="https://storage.v2raytun.com/v2RayTun_Setup.exe" target="_blank" rel="noopener">🪟 Windows</a>
       </div>
 
       <div class="h2" style="margin-top:16px">2️⃣ Добавьте персональный ключ</div>
       <div class="grid2">
         <a id="btnIOS" class="btn btn-primary" href="#">🚀 Подключить VPN iPhone / Mac</a>
         <a id="btnAndroid" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
-      </div>
-
-      <!-- Видимая ссылka под кнопкой Android/Windows -->
-      <div id="androidLink" class="note hid" style="margin-top:8px; word-break:break-all">
-        Резервная ссылка для Android / Windows:
-        <a id="androidDeepLink" href="#" rel="noopener" style="color:#e9edf3"></a>
       </div>
 
       <div class="grid2" style="margin-top:12px">
@@ -125,21 +119,16 @@
 
       <div class="hr"></div>
 
-      <div class="h2">⚠️ После подключения</div>
-      <div class="grid2">
-        <a class="btn btn-store" href="https://www.instagram.com/musa_abdullaew?igsh=MWhoMzd1Y2ozdnF0ZA%3D%3D&utm_source=qr" target="_blank" rel="noopener">📷 Подписаться в Instagram</a>
-        <a class="btn btn-store" href="https://wa.me/79634244662" target="_blank" rel="noopener">🟢 Написать в WhatsApp</a>
-      </div>
-      <p class="note">Не пересылайте ключ. Один ключ — один человек.</p>
+      <div class="h2">🚨 ВАЖНО! НЕ ПЕРЕСЫЛАЙТЕ ЭТОТ КЛЮЧ!</div>
+      <p>Один ключ — один человек. Если кому‑то нужен VPN — выдадим отдельный.</p>
+
+      <p class="note" style="margin-top:18px">📿 Поддержите нас добрым словом. Альхамдулиллях. ❤️</p>
     </div>
   </div>
 
   <div id="toast" class="toast">Скопировано</div>
 
   <script>
-    const ua = navigator.userAgent || "";
-    const isAndroid = /Android/i.test(ua);
-
     const qs = new URLSearchParams(location.search);
     const id = parseInt(qs.get('id'), 10);
 
@@ -147,24 +136,13 @@
     const btnAndroid = document.getElementById('btnAndroid');
     const btnCopy = document.getElementById('btnCopy');
     const toast = document.getElementById('toast');
-    const androidLink = document.getElementById('androidLink');
-    const androidDeepLink = document.getElementById('androidDeepLink');
 
     if (!Number.isFinite(id) || id < 1) {
       btnIOS.classList.add('hid');
       btnAndroid.classList.add('hid');
       btnCopy.classList.add('hid');
-      androidLink.classList.add('hid');
     } else {
       init().catch(console.error);
-    }
-
-    async function ensureSW(){
-      if(!('serviceWorker' in navigator)) return;
-      try{
-        await navigator.serviceWorker.register('/sw.js',{scope:'/'});
-        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,150));
-      }catch(_){}
     }
 
     function showToast(msg){
@@ -173,8 +151,23 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // deep link для v2raytun
-    function deepV2raytun(payload){ return 'v2raytun://import/' + encodeURIComponent(payload); }
+    // deep link для v2RayTun: кодируем ВЕСЬ VLESS один раз
+    const deepV2raytun = (vless) => 'v2raytun://import/' + encodeURIComponent(vless);
+
+    // Нормализация VLESS под Android‑парсер:
+    // 1) убираем лишний слэш перед '?', 2) приводим spx к '/'
+    function normalizeVless(v){
+      let s = v.trim();
+
+      // :2053/? -> :2053?
+      s = s.replace(/:(\d+)\/\?/, ':$1?');
+
+      // spx -> '/'
+      if (/[?&]spx=/i.test(s)) {
+        s = s.replace(/([?&]spx=)([^&#]*)/i, '$1/');
+      }
+      return s;
+    }
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
@@ -183,33 +176,23 @@
     }
 
     async function init(){
-      await ensureSW();
+      const vlessRaw = await getVLESS();
+      const vlessFixed = normalizeVless(vlessRaw);
 
-      // получаем единый ключ
-      const vless = await getVLESS();
+      // iPhone/Mac — НЕ МЕНЯЛ: тот же формат
+      btnIOS.href = deepV2raytun(vlessFixed);
 
-      // диплинк одинаковый payload для iOS и Android/Windows
-      const linkDeep = deepV2raytun(vless);
+      // Android/Windows — один deep link v2raytun://import/{VLESS}
+      btnAndroid.href = deepV2raytun(vlessFixed);
 
-      // iOS / Mac — как обычно
-      btnIOS.href = linkDeep;
-
-      // Android / Windows — сама кнопка тоже ведёт на такой deep link
-      btnAndroid.href = linkDeep;
-
-      // показать видимую ссылку под кнопкой Android/Windows в требуемом формате
-      androidDeepLink.href = linkDeep;
-      androidDeepLink.textContent = linkDeep;
-      androidLink.classList.remove('hid');
-
-      // Копирование ключа
+      // Копирование ключа (сырая строка удобнее для ручного импорта)
       btnCopy.addEventListener('click', async ()=>{
         try{
-          await navigator.clipboard.writeText(vless);
+          await navigator.clipboard.writeText(vlessFixed);
           showToast('Ключ скопирован');
         }catch{
           const ta = document.createElement('textarea');
-          ta.value = vless; document.body.appendChild(ta);
+          ta.value = vlessFixed; document.body.appendChild(ta);
           ta.select(); document.execCommand('copy'); ta.remove();
           showToast('Ключ скопирован');
         }
