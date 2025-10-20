@@ -15,7 +15,7 @@
   <div class="card">
     <div style="font-weight:800;font-size:18px">Переход в приложение</div>
     <p class="muted">Если приложение не открылось автоматически, нажмите кнопку ниже.</p>
-    <a id="store" class="btn" href="https://play.google.com/store/apps/details?id=com.v2raytun.android" rel="noopener" target="_blank">Перейти в магазин приложений</a>
+    <a class="btn" href="https://play.google.com/store/apps/details?id=com.v2raytun.android" rel="noopener" target="_blank">Перейти в магазин приложений</a>
   </div>
 
   <script>
@@ -29,7 +29,7 @@
       if(!r.ok){ return; }
       const vless = (await r.text()).trim(); // vless://...
 
-      // Формируем intent для v2RayTun с ЭТИМ ЖЕ ключом
+      // Формируем корректный intent на импорт именно vless-ключа
       const enc = encodeURIComponent(vless);
       const fb  = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
       const intent = `intent://import/${enc}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=${fb};end`;
