@@ -183,25 +183,37 @@
       const payload = encodeURIComponent(vless);
       return 'intent://import/' + payload + '#Intent;scheme=v2raytun;package=com.v2raytun.android;end';
     }
+    // v2rayNG deep link (фолбэк: импорт по URL подписки)
+    function deepV2rayngFromUrl(url){ return 'v2rayng://install-config?url=' + encodeURIComponent(url); }
 
-    // Добавляем encryption=none, если его нет (фикс для Android/Windows)
+    // Добавляем encryption=none, если отсутствует
     function ensureEncryptionNone(vless){
-      const parts = vless.split('#');                 // отделяем фрагмент
-      const noFrag = parts[0];
-      const frag = parts.length > 1 ? ('#' + parts.slice(1).join('#')) : '';
-      const qm = noFrag.indexOf('?');
-      const base = qm === -1 ? noFrag : noFrag.slice(0, qm);
-      const queryRaw = qm === -1 ? '' : noFrag.slice(qm + 1);
-      const qs = new URLSearchParams(queryRaw);
-      if (!qs.has('encryption')) qs.set('encryption', 'none');
-      const fixed = base + '?' + qs.toString() + frag;
-      return fixed;
+      const [noFrag, ...fragParts] = vless.split('#');
+      const frag = fragParts.length ? '#' + fragParts.join('#') : '';
+      const qIndex = noFrag.indexOf('?');
+      const base = qIndex === -1 ? noFrag : noFrag.slice(0, qIndex);
+      const queryRaw = qIndex === -1 ? '' : noFrag.slice(qIndex + 1);
+      const q = new URLSearchParams(queryRaw);
+      if (!q.has('encryption')) q.set('encryption', 'none');
+      return base + '?' + q.toString() + frag;
     }
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
       if(!r.ok) throw new Error('sub?id='+id+' not available');
       return (await r.text()).trim();
+    }
+
+    async function safeCopy(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast('Ключ скопирован');
+      }catch{
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy'); ta.remove();
+        showToast('Ключ скопирован');
+      }
     }
 
     async function init(){
@@ -212,38 +224,40 @@
       const linkIOS = deepV2raytun(vless);
       btnIOS.href = linkIOS;
 
-      // Android / Windows — чиним ссылку и импортируем
+      // Android / Windows — готовим варианты
       const vlessFixed = ensureEncryptionNone(vless);
-      const linkIntent = intentV2raytun(vlessFixed);
-      const linkDirect = deepV2raytun(vlessFixed);
+      const linkIntentVTT = intentV2raytun(vlessFixed);
+      const linkDirectVTT = deepV2raytun(vlessFixed);
+      const subUrl = location.origin + '/sub?id=' + id; // текстовый endpoint вашей подписки
+      const linkV2NG = deepV2rayngFromUrl(subUrl);
 
       if (isAndroid) {
-        btnAndroid.href = linkIntent;
-        btnAndroid.addEventListener('click', ()=>{
-          setTimeout(()=>{ try{ location.href = linkDirect; }catch(_){} }, 800);
+        // По клику: копируем ключ и пытаемся по цепочке открыть клиент
+        btnAndroid.href = linkIntentVTT;
+        btnAndroid.addEventListener('click', async (e)=>{
+          e.preventDefault();
+          await safeCopy(vlessFixed);                      // чтобы можно было "Вставить из буфера"
+          // 1) v2raytun (intent)
+          try{ location.href = linkIntentVTT; }catch(_){}
+          // 2) v2raytun (deep link)
+          setTimeout(()=>{ try{ location.href = linkDirectVTT; }catch(_){} }, 700);
+          // 3) v2rayNG (импорт по URL)
+          setTimeout(()=>{ try{ location.href = linkV2NG; }catch(_){} }, 1400);
+          // 4) просто открыть приложение v2raytun
+          setTimeout(()=>{ try{ location.href = 'intent://#Intent;scheme=v2raytun;package=com.v2raytun.android;end'; }catch(_){} }, 2100);
         });
-      } else {
-        btnAndroid.href = linkDirect;
-      }
 
-      // Скопировать ключ
-      btnCopy.addEventListener('click', async ()=>{
-        try{
-          await navigator.clipboard.writeText(vless);
-          showToast('Ключ скопирован');
-        }catch{
-          const ta = document.createElement('textarea');
-          ta.value = vless; document.body.appendChild(ta);
-          ta.select(); document.execCommand('copy'); ta.remove();
-          showToast('Ключ скопирован');
+        // Автопредложение вне in‑app: только первый шаг, остальное по клику
+        if(!isInApp){
+          try{ location.href = linkIntentVTT; }catch(_){}
         }
-      });
-
-      // Автопредложение на Android (вне in‑app) + фолбэк
-      if(isAndroid && !isInApp){
-        try{ location.href = linkIntent; }catch(_){}
-        setTimeout(()=>{ try{ location.href = linkDirect; }catch(_){} }, 800);
+      } else {
+        // Десктоп/Windows — открываем deep‑link напрямую
+        btnAndroid.href = linkDirectVTT;
       }
+
+      // Кнопка "Скопировать ключ"
+      btnCopy.addEventListener('click', ()=> safeCopy(vless));
     }
   </script>
 </body>
