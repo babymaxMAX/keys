@@ -106,8 +106,11 @@
 
       <div class="h2" style="margin-top:16px">2️⃣ Добавьте персональный ключ</div>
       <div class="grid2">
+        <!-- iOS / Mac — без изменений -->
         <a id="btnIOS" class="btn btn-primary" href="#">🚀 Подключить VPN iPhone / Mac</a>
-        <a id="btnAndroid" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
+
+        <!-- Android / Windows — v2RayTun диплинк с payload = HTTPS-подписка (URL-кодированный). Fallback: Intent для Android. -->
+        <a id="btnAW" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
       </div>
 
       <div class="grid2" style="margin-top:12px">
@@ -152,13 +155,13 @@
     const id = parseInt(qs.get('id'), 10);
 
     const btnIOS = document.getElementById('btnIOS');
-    const btnAndroid = document.getElementById('btnAndroid');
+    const btnAW  = document.getElementById('btnAW');
     const btnCopy = document.getElementById('btnCopy');
     const toast = document.getElementById('toast');
 
     if (!Number.isFinite(id) || id < 1) {
       btnIOS.classList.add('hid');
-      btnAndroid.classList.add('hid');
+      btnAW.classList.add('hid');
       btnCopy.classList.add('hid');
     } else {
       init().catch(console.error);
@@ -178,9 +181,9 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // Схемы
-    function deepV2raytun(vless){ return 'v2raytun://import/' + encodeURIComponent(vless); }
-    function linkV2rayNG(vless){ return 'v2rayng://install-config?url=' + encodeURIComponent(vless); }
+    // Схемы v2RayTun (официально)
+    const makeTunDeep = (payload) => 'v2raytun://import/' + encodeURIComponent(payload);
+    const makeIntent  = (payload) => 'intent://import/' + encodeURIComponent(payload) + '#Intent;scheme=v2raytun;package=com.v2raytun.android;end';
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
@@ -190,32 +193,34 @@
 
     async function init(){
       await ensureSW();
+
+      // 1) Получаем актуальный VLESS (для iOS/Mac и копирования)
       const vless = await getVLESS();
-      const subUrl = location.origin + '/sub?id=' + id;
 
-      // iOS / Mac — оставляем рабочий диплинк V2RayTun
-      const linkIOS = deepV2raytun(vless);
-      btnIOS.href = linkIOS;
+      // 2) iOS / Mac — рабочий диплинк с одиночным VLESS
+      const deepIOS = makeTunDeep(vless);
+      btnIOS.href = deepIOS;
 
-      // Android / Windows — по ТЗ:
-      // - Android: v2rayNG диплинк (главный), fallback на V2RayTun диплинк
-      // - Windows: показываем raw vless:// (если ассоциация есть), fallback — открываем страницу подписки
-      const linkNG = linkV2rayNG(vless);
-      const linkTun = linkIOS;
+      // 3) Android / Windows — диплинк со встроенной подпиской (устойчивее)
+      const subUrl   = location.origin + '/sub?id=' + id;   // raw
+      const deepAW   = makeTunDeep(subUrl);                 // v2raytun://import/<ENCODED(https://.../sub?id=N)>
+      const intentAW = makeIntent(subUrl);                  // intent://import/<ENCODED(https://.../sub?id=N)>#Intent;scheme=v2raytun;package=...
 
-      btnAndroid.addEventListener('click', (e)=>{
+      btnAW.addEventListener('click', (e)=>{
         e.preventDefault();
-        if (isWindows){
-          try { location.href = vless; } catch(_){}
-          setTimeout(()=>{ try { location.href = subUrl; } catch(_){} }, 700);
-          return;
-        }
-        // Android
-        try { location.href = linkNG; } catch(_){}
-        setTimeout(()=>{ try { location.href = linkTun; } catch(_){} }, 700);
+        // Сначала пробуем диплинк v2raytun:// (Android/Windows)
+        try { location.href = deepAW; } catch(_) {}
+        // Fallback: на Android — Intent, на Windows — просто открыть подписку
+        setTimeout(()=> {
+          if (isAndroid) {
+            try { location.href = intentAW; } catch(_) {}
+          } else if (isWindows) {
+            try { location.href = subUrl; } catch(_) {}
+          }
+        }, 800);
       });
 
-      // Скопировать ключ
+      // 4) Скопировать ключ (raw VLESS)
       btnCopy.addEventListener('click', async ()=>{
         try{
           await navigator.clipboard.writeText(vless);
@@ -228,9 +233,10 @@
         }
       });
 
-      // Автопредложение для Android вне in‑app
+      // Автопредложение для Android (вне in‑app) — диплинк, затем Intent
       if(isAndroid && !isInApp){
-        try{ location.href = linkNG; }catch(_){}
+        try { location.href = deepAW; } catch(_) {}
+        setTimeout(()=>{ try { location.href = intentAW; } catch(_) {} }, 900);
       }
     }
   </script>
