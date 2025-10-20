@@ -107,7 +107,7 @@
       <div class="h2" style="margin-top:16px">2️⃣ Добавьте персональный ключ</div>
       <div class="grid2">
         <a id="btnIOS" class="btn btn-primary" href="#">🚀 Подключить VPN iPhone / Mac</a>
-        <a id="btnAndroid" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
+        <button id="btnAndroid" class="btn btn-ghost" type="button">⚡ Подключить VPN Android / Windows</button>
       </div>
 
       <div class="grid2" style="margin-top:12px">
@@ -233,7 +233,6 @@
 
       if (isAndroid) {
         // По клику: копируем ключ и пытаемся по цепочке открыть клиент
-        btnAndroid.href = linkIntentVTT;
         btnAndroid.addEventListener('click', async (e)=>{
           e.preventDefault();
           await safeCopy(vlessFixed);                      // чтобы можно было "Вставить из буфера"
@@ -253,7 +252,10 @@
         }
       } else {
         // Десктоп/Windows — открываем deep‑link напрямую
-        btnAndroid.href = linkDirectVTT;
+        btnAndroid.addEventListener('click', (e)=>{
+          e.preventDefault();
+          try{ location.href = linkDirectVTT; }catch(_){}
+        });
       }
 
       // Кнопка "Скопировать ключ"
