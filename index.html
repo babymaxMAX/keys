@@ -26,7 +26,7 @@
     .btn-primary{background:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 86%);box-shadow:0 14px 36px rgba(247,194,62,0.28),0 2px 0 rgba(255,255,255,0.18) inset}
     .btn-ghost{color:var(--text);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03));border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,0.35)}
     .btn-store{background:linear-gradient(180deg,#1e2435,#151a28);color:#e7ebf5;border:1px solid var(--line)}
-    .note{font-size:13px;color:var(--muted);word-break:break-all}
+    .note{font-size:13px;color:var(--muted)}
     .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:#0f1220;color:var(--text);border:1px solid var(--line);padding:10px 14px;border-radius:10px;opacity:0;transition:.22s ease;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,0.55);font-size:14px}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .hid{display:none}
@@ -46,10 +46,13 @@
 
     <div class="card">
       <div style="font-size:18px;font-weight:800;margin-bottom:6px">💻 LsJ VPN по подписке</div>
-      <p>Ассаламу алейкум!</p>
-      <p>Подключите стабильный и быстрый VPN на ваше устройство.</p>
+      <p>Ассаламу алейкум, дорогой брат / дорогая сестра!</p>
+      <p>Подключите стабильный и быстрый VPN на ваше устройство! Всё очень просто:</p>
 
       <div class="hr"></div>
+
+      <div class="h2">🔧 Как подключиться</div>
+      <p class="muted">Удалите старые VPN‑приложения, очистите их профили, перезагрузите телефон и следуйте инструкции.</p>
 
       <div class="h2">1️⃣ Установите v2raytun</div>
       <div class="grid2">
@@ -64,25 +67,31 @@
         <a id="btnIOS" class="btn btn-primary" href="#">🚀 Подключить VPN iPhone / Mac</a>
         <a id="btnAndroid" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
       </div>
-      <div id="androidLinkWrap" class="note" style="margin-top:6px"></div>
 
       <div class="grid2" style="margin-top:12px">
         <button id="btnCopy" class="btn btn-ghost" type="button">📋 Скопировать ключ</button>
       </div>
 
       <div class="h2" style="margin-top:16px">3️⃣ Запустите v2raytun</div>
-      <p>Откройте приложение и нажмите большую синюю кнопку.</p>
+      <p>Откройте приложение, нажмите большую синюю кнопку — и наслаждайтесь скоростью и безопасностью!</p>
 
       <div class="hr"></div>
 
-      <div class="h2">🚨 ВАЖНО!</div>
-      <p>Один ключ — один человек.</p>
+      <div class="h2">⚠️ После подключения</div>
+      <div class="grid2">
+        <a class="btn btn-store" href="https://www.instagram.com/musa_abdullaew?igsh=MWhoMzd1Y2ozdnF0ZA%3D%3D&utm_source=qr" target="_blank" rel="noopener">📷 Instagram</a>
+        <a class="btn btn-store" href="https://wa.me/79634244662" target="_blank" rel="noopener">🟢 WhatsApp</a>
+      </div>
+      <p class="note">Не пересылайте ключ. Один ключ — один человек.</p>
     </div>
   </div>
 
   <div id="toast" class="toast">Скопировано</div>
 
   <script>
+    const ua = navigator.userAgent || "";
+    const isAndroid = /Android/i.test(ua);
+
     const qs = new URLSearchParams(location.search);
     const id = parseInt(qs.get('id'), 10);
 
@@ -90,55 +99,56 @@
     const btnAndroid = document.getElementById('btnAndroid');
     const btnCopy = document.getElementById('btnCopy');
     const toast = document.getElementById('toast');
-    const androidLinkWrap = document.getElementById('androidLinkWrap');
 
     if (!Number.isFinite(id) || id < 1) {
       btnIOS.classList.add('hid');
       btnAndroid.classList.add('hid');
       btnCopy.classList.add('hid');
-      androidLinkWrap.classList.add('hid');
     } else {
       init().catch(console.error);
     }
 
-    async function getVLESS(){
-      const r = await fetch('/sub?id='+id, { cache:'no-store' });
-      if(!r.ok) throw new Error('sub?id='+id+' not available');
-      return (await r.text()).trim();
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    function deepV2raytun(payload){ return 'v2raytun://import/' + encodeURIComponent(payload); }
+    const deepV2raytun = (payload) => 'v2raytun://import/' + encodeURIComponent(payload);
+
+    async function getVLESS(){
+      const r = await fetch('/sub?id=' + id, { cache:'no-store' });
+      if(!r.ok) throw new Error('sub?id=' + id + ' not available');
+      return (await r.text()).trim();
+    }
 
     async function init(){
       const vless = await getVLESS();
 
-      // iPhone — одиночный vless
+      // iOS/Mac — одиночный профиль
       btnIOS.href = deepV2raytun(vless);
 
-      // Android — мостовая ссылка строго по вашему домену + версия для обхода кэша
-      const configUrl = 'https://keys-a9dy.onrender.com/config.html?id=' + id + '&v=2';
+      // Android/Windows — через промежуточную страницу (как в рабочем примере deeplink.website)
+      const configUrl = location.origin + '/config.html?id=' + id;
       const bridgeUrl = 'https://deeplink.website/?url=' + encodeURIComponent(configUrl);
-      btnAndroid.href = bridgeUrl;
+      if (isAndroid) {
+        btnAndroid.href = bridgeUrl; // без авто-переходов до клика
+      } else {
+        // На Windows, если протокол зарегистрирован — импорт по URL подписки
+        btnAndroid.href = deepV2raytun(location.origin + '/sub?id=' + id);
+      }
 
-      // показать ссылку под кнопкой
-      androidLinkWrap.textContent = 'Ссылка для Android/Windows: ';
-      const a = document.createElement('a');
-      a.href = bridgeUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = bridgeUrl;
-      androidLinkWrap.appendChild(a);
-
-      // копирование ключа
+      // Копирование ключа
       btnCopy.addEventListener('click', async ()=>{
         try{
           await navigator.clipboard.writeText(vless);
-          toast.textContent = 'Ключ скопирован';
+          showToast('Ключ скопирован');
         }catch{
           const ta = document.createElement('textarea');
           ta.value = vless; document.body.appendChild(ta);
           ta.select(); document.execCommand('copy'); ta.remove();
-          toast.textContent = 'Ключ скопирован';
+          showToast('Ключ скопирован');
         }
-        toast.classList.add('show');
-        setTimeout(()=>toast.classList.remove('show'),1300);
       });
     }
   </script>
