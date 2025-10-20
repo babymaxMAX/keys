@@ -63,7 +63,7 @@
       border:1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
     .btn-store{ background: linear-gradient(180deg, #1e2435, #151a28); color:#e7ebf5; border:1px solid var(--line) }
-    .note{font-size:13px; color:var(--muted)}
+    .note{font-size:13px; color:var(--muted); word-break: break-all}
     .toast{
       position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(30px);
       background:#0f1220; color:var(--text); border:1px solid var(--line);
@@ -109,6 +109,7 @@
         <a id="btnIOS" class="btn btn-primary" href="#">🚀 Подключить VPN iPhone / Mac</a>
         <a id="btnAndroid" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
       </div>
+      <div class="note" id="androidLinkWrap" style="margin-top:6px"></div>
 
       <div class="grid2" style="margin-top:12px">
         <button id="btnCopy" class="btn btn-ghost" type="button">📋 Скопировать ключ</button>
@@ -148,57 +149,58 @@
     const btnAndroid = document.getElementById('btnAndroid');
     const btnCopy = document.getElementById('btnCopy');
     const toast = document.getElementById('toast');
+    const androidLinkWrap = document.getElementById('androidLinkWrap');
 
     if (!Number.isFinite(id) || id < 1) {
       btnIOS.classList.add('hid');
       btnAndroid.classList.add('hid');
       btnCopy.classList.add('hid');
+      androidLinkWrap.classList.add('hid');
     } else {
       init().catch(console.error);
     }
 
-    function showToast(msg){
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(()=>toast.classList.remove('show'), 1300);
-    }
-
-    // v2RayTun deep links
-    function deepV2raytun(payload){ return 'v2raytun://import/' + encodeURIComponent(payload); }
-
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
       if(!r.ok) throw new Error('sub?id='+id+' not available');
-      return (await r.text()).trim(); // ровно одна строка vless://...
+      return (await r.text()).trim(); // vless://...
     }
 
-    async function init(){
-      const vless = await getVLESS(); // ОДИН и тот же ключ для iPhone и Android
+    function deepV2raytun(payload){ return 'v2raytun://import/' + encodeURIComponent(payload); }
 
-      // iPhone / Mac — одиночный deep link (без изменений)
+    async function init(){
+      const vless = await getVLESS();
+
+      // iPhone / Mac — импорт одиночного vless (как и было)
       btnIOS.href = deepV2raytun(vless);
 
-      // Android — ссылка-мост по образцу, указывающая на наш config.html
+      // Android — ссылка-МОСТ под кнопкой и в кнопке, на вашем домене
       const configUrl = location.origin + '/config.html?id=' + id;
       const bridgeUrl = 'https://deeplink.website/?url=' + encodeURIComponent(configUrl);
-      if (isAndroid) {
-        btnAndroid.href = bridgeUrl; // один переход, без дополнительных попыток
-      } else {
-        // Windows/десктоп: если протокол зарегистрирован — можно открыть напрямую
-        btnAndroid.href = deepV2raytun(vless);
-      }
+      btnAndroid.href = bridgeUrl;
 
-      // Скопировать ключ
+      // Показать саму ссылку под кнопкой, как вы просили
+      const a = document.createElement('a');
+      a.href = bridgeUrl;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = bridgeUrl;
+      androidLinkWrap.textContent = 'Если не открывается автоматически, воспользуйтесь ссылкой: ';
+      androidLinkWrap.appendChild(a);
+
+      // Копировать ключ
       btnCopy.addEventListener('click', async ()=>{
         try{
           await navigator.clipboard.writeText(vless);
-          showToast('Ключ скопирован');
+          toast.textContent = 'Ключ скопирован';
         }catch{
           const ta = document.createElement('textarea');
           ta.value = vless; document.body.appendChild(ta);
           ta.select(); document.execCommand('copy'); ta.remove();
-          showToast('Ключ скопирован');
+          toast.textContent = 'Ключ скопирован';
         }
+        toast.classList.add('show');
+        setTimeout(()=>toast.classList.remove('show'),1300);
       });
     }
   </script>
