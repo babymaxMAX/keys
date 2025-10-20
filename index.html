@@ -42,7 +42,6 @@
     .h2{font-size:18px; font-weight:800; margin:14px 0 10px}
     p{margin:8px 0 10px; color:var(--text)}
     .muted{color:var(--muted)}
-    ul{margin:8px 0 8px 20px}
     .grid2{display:grid; grid-template-columns:1fr; gap:12px}
     @media (min-width:640px){ .grid2{grid-template-columns:1fr 1fr} }
     .btn{
@@ -88,8 +87,6 @@
 
     <div class="card">
       <div style="font-size:18px; font-weight:800; margin-bottom:6px">💻 LsJ VPN по подписке</div>
-      <p>Ассаламу алейкум, дорогой брат / дорогая сестра!</p>
-      <p>Подключите стабильный и быстрый VPN на ваше устройство! Всё очень просто:</p>
 
       <div class="hr"></div>
 
@@ -112,7 +109,7 @@
       </div>
 
       <div class="h2" style="margin-top:16px">3️⃣ Запустите v2raytun</div>
-      <p>Откройте приложение, нажмите большую синюю кнопку.</p>
+      <p>Откройте приложение и нажмите большую синюю кнопку.</p>
     </div>
   </div>
 
@@ -141,33 +138,45 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // Глубокая ссылка V2RayTun: кодируем ВЕСЬ VLESS один раз
+    // v2raytun deep link (кодируем ВЕСЬ VLESS один раз)
     const deepV2raytun = (vless) => 'v2raytun://import/' + encodeURIComponent(vless);
 
     // Нормализация под Android:
     // - :port/?  -> :port?
-    // - spx=%2F/%252F -> spx=/
-    // - хвост после # декодируем (чтобы не было %252F), затем кодируем один раз всей строкой
-    function normalizeVless(v){
+    // - добавляем encryption=none (если отсутствует)
+    // - spx -> '/'
+    // - снимаем двойную кодировку во фрагменте (#...)
+    function normalizeVlessForAndroid(v){
       let s = v.trim();
 
-      // Исправляем слэш перед '?'
+      // :2053/? -> :2053?
       s = s.replace(/:(\d+)\/\?/, ':$1?');
 
-      // Чиним spx
-      s = s.replace(/([?&]spx=)([^&#]*)/i, (_, p, val) => {
-        let dec = val;
-        try { dec = decodeURIComponent(val); } catch(_) {}
-        return p + '/';
-      });
+      // URLSearchParams по query
+      const qIndex = s.indexOf('?');
+      const hIndex = s.indexOf('#');
+      const base = qIndex === -1 ? s : s.slice(0, qIndex);
+      const query = qIndex === -1 ? '' : (hIndex === -1 ? s.slice(qIndex + 1) : s.slice(qIndex + 1, hIndex));
+      const hash = hIndex === -1 ? '' : s.slice(hIndex + 1);
 
-      // Декодируем фрагмент (name после #), чтобы убрать двойное кодирование
-      s = s.replace(/#(.+)$/,(m,frag)=>{
-        let dec = frag;
-        try { dec = decodeURIComponent(frag); } catch(_) {}
-        return '#'+dec;
-      });
+      const params = new URLSearchParams(query);
+      if (!params.has('encryption')) params.set('encryption', 'none'); // критично для Android
+      // spx=/ (одинарно)
+      if (params.has('spx')) {
+        params.set('spx', '/');
+      }
 
+      // починенный query
+      const fixedQuery = params.toString();
+
+      // декодируем хвост после #, чтобы убрать %252F -> %2F и подобное
+      let fixedHash = hash;
+      if (fixedHash) {
+        try { fixedHash = decodeURIComponent(fixedHash); } catch(_) {}
+      }
+
+      // собираем обратно
+      s = base + (fixedQuery ? '?' + fixedQuery : '') + (fixedHash ? '#' + fixedHash : '');
       return s;
     }
 
@@ -179,22 +188,22 @@
 
     async function init(){
       const vlessRaw = await getVLESS();
-      const vlessFixed = normalizeVless(vlessRaw);
+      const vlessAndroid = normalizeVlessForAndroid(vlessRaw);
 
-      // iPhone — НЕ МЕНЯЕМ формат
+      // iPhone — оставляем без изменений (как просили)
       btnIOS.href = deepV2raytun(vlessRaw);
 
-      // Android/Windows — по ТЗ: v2raytun://import/{VLESS} с одинарной кодировкой всей строки
-      btnAndroid.href = deepV2raytun(vlessFixed);
+      // Android/Windows — «эталон» с encryption=none и исправлениями
+      btnAndroid.href = deepV2raytun(vlessAndroid);
 
-      // Скопировать ключ (удобнее — уже исправленный)
+      // Копирование ключа — даём уже исправленный (удобно для ручного импорта)
       btnCopy.addEventListener('click', async ()=>{
         try{
-          await navigator.clipboard.writeText(vlessFixed);
+          await navigator.clipboard.writeText(vlessAndroid);
           showToast('Ключ скопирован');
         }catch{
           const ta = document.createElement('textarea');
-          ta.value = vlessFixed; document.body.appendChild(ta);
+          ta.value = vlessAndroid; document.body.appendChild(ta);
           ta.select(); document.execCommand('copy'); ta.remove();
           showToast('Ключ скопирован');
         }
