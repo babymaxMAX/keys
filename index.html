@@ -129,7 +129,7 @@
       <div class="hr"></div>
 
       <div class="h2">🚨 ВАЖНО! НЕ ПЕРЕСЫЛАЙТЕ ЭТОТ КЛЮЧ!</div>
-      <p>Это ссылка АМАНАТ. Один ключ — один человек.</p>
+      <p>Один ключ — один человек.</p>
 
       <p class="note" style="margin-top:18px">📿 Просим вас почитать за нашу команду LsJ VPN ДУА. ❤️</p>
     </div>
@@ -171,39 +171,52 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
+    // Формирование диплинков
     const deepV2raytun = (payload) => 'v2raytun://import/' + encodeURIComponent(payload);
     const intentV2raytun = (payload) => {
       const enc = encodeURIComponent(payload);
       const fb  = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
       return `intent://import/${enc}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=${fb};end`;
     };
-    const bridgeUrl = (target) => 'https://deeplink.website/?url=' + encodeURIComponent(target);
+    const bridgeUrl = (target) => 'https://deeplink.website/?url=' + encodeURIComponent(target); // по образцу рабочей ссылки
+
+    // Нормализация VLESS: добавим encryption=none, если отсутствует
+    function normalizeVless(vless){
+      const [noFrag, ...fragParts] = vless.split('#');
+      const frag = fragParts.length ? '#' + fragParts.join('#') : '';
+      const qPos = noFrag.indexOf('?');
+      const base = qPos === -1 ? noFrag : noFrag.slice(0, qPos);
+      const queryRaw = qPos === -1 ? '' : noFrag.slice(qPos + 1);
+      const q = new URLSearchParams(queryRaw);
+      if (!q.has('encryption')) q.set('encryption', 'none');
+      return base + '?' + q.toString() + frag;
+    }
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
       if(!r.ok) throw new Error('sub?id='+id+' not available');
-      return (await r.text()).trim();
+      return (await r.text()).trim(); // по ТЗ: /sub отдаёт ровно одну строку vless://...
     }
 
     async function init(){
       await ensureSW();
 
-      // iOS — одиночный профиль через deep link
-      const vless = await getVLESS();
+      const raw = await getVLESS();
+      const vless = normalizeVless(raw);
+
+      // iPhone/Mac — прямой deep link с тем же ключом
       btnIOS.href = deepV2raytun(vless);
 
-      // ANDROID: один-единственный href как в рабочем примере (через deeplink.website)
-      const subUrl = location.origin + '/sub?id=' + id;               // подписка/ключ по вашему id
-      const androidIntent = intentV2raytun(subUrl);                   // intent к v2raytun с fallback в Play
-      const androidBridge  = bridgeUrl(androidIntent);                // обёртка-страница для стабильного открытия
+      // Android — формат по рабочему примеру: страница‑мост -> intent -> v2raytun
       if (isAndroid) {
-        btnAndroid.href = androidBridge;                              // НИКАКОГО авто‑редиректа до нажатия
+        const androidIntent = intentV2raytun(vless); // payload — тот же vless
+        btnAndroid.href = bridgeUrl(androidIntent);
       } else {
-        // На Windows/десктопах оставим прямой deep link (если протокол зарегистрирован)
+        // На десктопах/Windows (если протокол зарегистрирован) — прямой deep link
         btnAndroid.href = deepV2raytun(vless);
       }
 
-      // Кнопка «Скопировать ключ»
+      // «Скопировать ключ»
       btnCopy.addEventListener('click', async ()=>{
         try{
           await navigator.clipboard.writeText(vless);
