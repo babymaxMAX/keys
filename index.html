@@ -139,9 +139,6 @@
   <div id="toast" class="toast">Скопировано</div>
 
   <script>
-    const ua = navigator.userAgent || "";
-    const isAndroid = /Android/i.test(ua);
-
     const qs = new URLSearchParams(location.search);
     const id = parseInt(qs.get('id'), 10);
 
@@ -171,24 +168,20 @@
     async function init(){
       const vless = await getVLESS();
 
-      // iPhone / Mac — импорт одиночного vless (как и было)
+      // iPhone / Mac — тот же ключ
       btnIOS.href = deepV2raytun(vless);
 
-      // Android — ссылка-МОСТ под кнопкой и в кнопке, на вашем домене
-      const configUrl = location.origin + '/config.html?id=' + id;
+      // Android — ссылка-мост строго по вашему домену (и под кнопкой, и в кнопке)
+      const configUrl = 'https://keys-a9dy.onrender.com/config.html?id=' + id;
       const bridgeUrl = 'https://deeplink.website/?url=' + encodeURIComponent(configUrl);
       btnAndroid.href = bridgeUrl;
 
-      // Показать саму ссылку под кнопкой, как вы просили
+      androidLinkWrap.textContent = 'Ссылка для Android/Windows: ';
       const a = document.createElement('a');
-      a.href = bridgeUrl;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.textContent = bridgeUrl;
-      androidLinkWrap.textContent = 'Если не открывается автоматически, воспользуйтесь ссылкой: ';
+      a.href = bridgeUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = bridgeUrl;
       androidLinkWrap.appendChild(a);
 
-      // Копировать ключ
+      // Копирование ключа
       btnCopy.addEventListener('click', async ()=>{
         try{
           await navigator.clipboard.writeText(vless);
