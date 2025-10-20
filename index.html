@@ -6,99 +6,48 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111111">
   <style>
-    :root{
-      --bg-1:#0b0b0f; --bg-2:#101218;
-      --brand:#f7c23e; --brand-2:#ff9900;
-      --text:#e9edf3; --muted:#a7adba;
-      --card:#141825; --glow:rgba(247,194,62,0.25);
-      --line:rgba(255,255,255,0.12);
-    }
+    :root{--bg-1:#0b0b0f;--bg-2:#101218;--brand:#f7c23e;--brand-2:#ff9900;--text:#e9edf3;--muted:#a7adba;--line:rgba(255,255,255,0.12);--glow:rgba(247,194,62,0.25)}
     html,body{height:100%}
-    body{
-      margin:0; color:var(--text);
-      background: radial-gradient(1200px 800px at 70% -10%, #1c2135 0%, transparent 70%),
-                  radial-gradient(900px 700px at 0% 100%, #1b1626 0%, transparent 65%),
-                  linear-gradient(180deg, var(--bg-1), var(--bg-2));
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", "Segoe UI Emoji";
-    }
-    .shell{max-width:880px; margin:0 auto; padding:28px 18px 40px}
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border:1px solid var(--line);
-      border-radius:18px; padding:22px 18px;
-      box-shadow: 0 10px 35px rgba(0,0,0,0.45), 0 0 80px 0 var(--glow);
-      backdrop-filter: blur(6px);
-    }
-    .brand{display:flex; align-items:center; gap:16px; margin:10px 0 16px}
-    .logo{
-      width:64px; height:64px; border-radius:50%;
-      display:grid; place-items:center; flex:0 0 64px;
-      background: radial-gradient(circle at 50% 40%, var(--brand) 0%, var(--brand-2) 60%, #a96700 100%);
-      box-shadow: 0 0 30px var(--glow), 0 8px 24px rgba(0,0,0,0.45);
-    }
-    .title{font-weight:900; font-size:28px; letter-spacing:0.2px}
-    .sub{color:var(--muted); margin-top:2px}
-    .hr{height:1px; background:var(--line); margin:18px 0}
-    .h2{font-size:18px; font-weight:800; margin:14px 0 10px}
-    p{margin:8px 0 10px; color:var(--text)}
+    body{margin:0;color:var(--text);background:radial-gradient(1200px 800px at 70% -10%,#1c2135 0%,transparent 70%),radial-gradient(900px 700px at 0% 100%,#1b1626 0%,transparent 65%),linear-gradient(180deg,var(--bg-1),var(--bg-2));font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .shell{max-width:880px;margin:0 auto;padding:28px 18px 40px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:18px;padding:22px 18px;box-shadow:0 10px 35px rgba(0,0,0,.45),0 0 80px 0 var(--glow);backdrop-filter:blur(6px)}
+    .brand{display:flex;align-items:center;gap:16px;margin:10px 0 16px}
+    .logo{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,var(--brand) 0%,var(--brand-2) 60%,#a96700 100%);box-shadow:0 0 30px var(--glow),0 8px 24px rgba(0,0,0,.45)}
+    .title{font-weight:900;font-size:28px}
+    .sub{color:var(--muted)}
+    .hr{height:1px;background:var(--line);margin:18px 0}
+    .h2{font-size:18px;font-weight:800;margin:14px 0 10px}
+    p{margin:8px 0 10px}
     .muted{color:var(--muted)}
-    ul{margin:8px 0 8px 20px}
-    .grid2{display:grid; grid-template-columns:1fr; gap:12px}
-    @media (min-width:640px){ .grid2{grid-template-columns:1fr 1fr} }
-    .btn{
-      -webkit-tap-highlight-color: rgba(0,0,0,0);
-      appearance:none; border:none; cursor:pointer; text-decoration:none;
-      display:inline-flex; align-items:center; justify-content:center; gap:10px;
-      font-weight:800; font-size:16px; letter-spacing:0.2px;
-      border-radius:14px; padding:14px 16px; min-height:54px; width:100%;
-      color:#101015; transition: transform .08s ease, box-shadow .14s ease, filter .14s ease;
-    }
-    .btn:active{ transform: translateY(1px) scale(.995) }
-    .btn-primary{
-      background: linear-gradient(180deg, var(--brand) 0%, var(--brand-2) 86%);
-      box-shadow: 0 14px 36px rgba(247,194,62,0.28), 0 2px 0 rgba(255,255,255,0.18) inset;
-    }
-    .btn-ghost{
-      color:var(--text); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      border:1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    }
-    .btn-store{ background: linear-gradient(180deg, #1e2435, #151a28); color:#e7ebf5; border:1px solid var(--line) }
-    .note{font-size:13px; color:var(--muted)}
-    .toast{
-      position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(30px);
-      background:#0f1220; color:var(--text); border:1px solid var(--line);
-      padding:10px 14px; border-radius:10px; opacity:0; transition:.22s ease; pointer-events:none;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.55); font-size:14px;
-    }
-    .toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
+    .grid2{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:640px){.grid2{grid-template-columns:1fr 1fr}}
+    .btn{appearance:none;border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:16px;border-radius:14px;padding:14px 16px;min-height:54px;width:100%;color:#101015;transition:transform .08s,box-shadow .14s,filter .14s}
+    .btn:active{transform:translateY(1px) scale(.995)}
+    .btn-primary{background:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 86%);box-shadow:0 14px 36px rgba(247,194,62,.28),0 2px 0 rgba(255,255,255,.18) inset}
+    .btn-ghost{color:#e9edf3;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+    .btn-store{background:linear-gradient(180deg,#1e2435,#151a28);color:#e7ebf5;border:1px solid var(--line)}
+    .note{font-size:13px;color:var(--muted)}
+    .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:#0f1220;color:#e9edf3;border:1px solid var(--line);padding:10px 14px;border-radius:10px;opacity:0;transition:.22s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.55);font-size:14px}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .hid{display:none}
   </style>
 </head>
 <body>
   <div class="shell">
     <div class="brand">
-      <div class="logo" aria-hidden="true">
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="#111"><path d="M12 2l.894 2.763h2.905l-2.351 1.708.897 2.762L12 7.525 9.655 9.233l.897-2.762L8.2 4.763h2.905L12 2z"/></svg>
-      </div>
-      <div>
-        <div class="title">LsJ VPN</div>
-        <div class="sub">Comrades • Premium Access</div>
-      </div>
+      <div class="logo" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="#111"><path d="M12 2l.894 2.763h2.905l-2.351 1.708.897 2.762L12 7.525 9.655 9.233l.897-2.762L8.2 4.763h2.905L12 2z"/></svg></div>
+      <div><div class="title">LsJ VPN</div><div class="sub">Comrades • Premium Access</div></div>
     </div>
 
     <div class="card">
-      <div style="font-size:18px; font-weight:800; margin-bottom:6px">💻 LsJ VPN по подписке</div>
-      <p>Ассаламу алейкум, дорогой брат / дорогая сестра!</p>
-      <p>Подключите стабильный и быстрый VPN на ваше устройство! Всё очень просто:</p>
+      <div style="font-size:18px;font-weight:800;margin-bottom:6px">💻 LsJ VPN по подписке</div>
+      <p>Ассаламу алейкум! Подключите стабильный и быстрый VPN — это просто.</p>
 
       <div class="hr"></div>
 
-      <div class="h2">🔧 Как подключиться</div>
-      <p class="muted">Перед началом удалите старые VPN‑приложения и перезагрузите устройство.</p>
-
       <div class="h2">1️⃣ Скачайте v2raytun</div>
       <div class="grid2">
-        <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951" target="_blank" rel="noopener"> macOS / MacBook</a>
+        <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951" target="_blank" rel="noopener"> macOS / Mac</a>
         <a class="btn btn-store" href="https://apps.apple.com/ru/app/v2raytun/id6476628951?l=en-GB" target="_blank" rel="noopener"> iPhone / iOS</a>
         <a class="btn btn-store" href="https://play.google.com/store/apps/details?id=com.v2raytun.android&hl=ru" target="_blank" rel="noopener">🤖 Android</a>
         <a class="btn btn-store" href="https://storage.v2raytun.com/v2RayTun_Setup.exe" target="_blank" rel="noopener">🪟 Windows</a>
@@ -106,10 +55,7 @@
 
       <div class="h2" style="margin-top:16px">2️⃣ Добавьте персональный ключ</div>
       <div class="grid2">
-        <!-- iOS / Mac — НЕ МЕНЯЕМ -->
         <a id="btnIOS" class="btn btn-primary" href="#">🚀 Подключить VPN iPhone / Mac</a>
-
-        <!-- Android / Windows — ТОЛЬКО ЭТУ КНОПКУ ПРАВИМ ПО ТЗ -->
         <a id="btnAW" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
       </div>
 
@@ -122,117 +68,118 @@
 
       <div class="hr"></div>
 
-      <div class="h2">⚠️ После подключения</div>
-      <div class="grid2">
-        <a class="btn btn-store" href="https://www.instagram.com/musa_abdullaew?igsh=MWhoMzd1Y2ozdnF0ZA%3D%3D&utm_source=qr" target="_blank" rel="noopener">📷 Подписаться в Instagram</a>
-        <a class="btn btn-store" href="https://wa.me/79634244662" target="_blank" rel="noopener">🟢 Написать в WhatsApp</a>
-      </div>
-      <p class="note">Не пересылайте ключ другим — один ключ = один пользователь.</p>
+      <div class="h2">⚠️ Важно</div>
+      <p class="note">Один ключ — один пользователь. Не пересылайте его третьим лицам.</p>
     </div>
   </div>
 
   <div id="toast" class="toast">Скопировано</div>
 
   <script>
+    // UA flags
     const ua = navigator.userAgent || "";
     const isAndroid = /Android/i.test(ua);
     const isWindows = /Windows NT|Win64|Win32/i.test(ua);
     const isInApp  = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
 
-    const qs = new URLSearchParams(location.search);
-    const id = parseInt(qs.get('id'), 10);
-
+    // UI refs
     const btnIOS  = document.getElementById('btnIOS');
     const btnAW   = document.getElementById('btnAW');
     const btnCopy = document.getElementById('btnCopy');
     const toast   = document.getElementById('toast');
 
-    if (!Number.isFinite(id) || id < 1) {
-      btnIOS.classList.add('hid');
-      btnAW.classList.add('hid');
-      btnCopy.classList.add('hid');
-    } else {
-      init().catch(console.error);
+    // id from query
+    const qs = new URLSearchParams(location.search);
+    const id = parseInt(qs.get('id'), 10);
+
+    // Deep link helpers (V2RayTun official)
+    const makeTunDeep = (payload) => 'v2raytun://import/' + encodeURIComponent(payload);
+    const makeIntent  = (payload) => 'intent://import/' + encodeURIComponent(payload) + '#Intent;scheme=v2raytun;package=com.v2raytun.android;end';
+
+    // Robust data probe:
+    // 1) /vless?id=N (raw vless://...) — если есть
+    // 2) /sub?id=N (если base64 — это подписка; если vless:// — используем как raw)
+    async function probeData() {
+      let vlessRaw = null, hasSubscription = false;
+      // try /vless
+      try {
+        const r = await fetch('/vless?id='+id, { cache:'no-store' });
+        if (r.ok) {
+          const t = (await r.text()).trim();
+          if (/^vless:\/\//i.test(t)) vlessRaw = t;
+        }
+      } catch (_) {}
+      // try /sub
+      const subUrl = location.origin + '/sub?id=' + id;
+      try {
+        const r2 = await fetch(subUrl, { cache:'no-store' });
+        if (r2.ok) {
+          const t2 = (await r2.text()).trim();
+          if (/^vless:\/\//i.test(t2)) { if (!vlessRaw) vlessRaw = t2; }
+          else {
+            // Heuristic for base64 subscription
+            const looksB64 = /^[A-Za-z0-9+/=\r\n]+$/.test(t2) && t2.length > 60;
+            hasSubscription = looksB64;
+          }
+        }
+      } catch (_) {}
+      return { vlessRaw, hasSubscription, subUrl };
     }
+
+    function showToast(msg){ toast.textContent = msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 1300); }
 
     async function ensureSW(){
       if(!('serviceWorker' in navigator)) return;
       try{
         await navigator.serviceWorker.register('/sw.js',{scope:'/'});
-        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,150));
+        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,120));
       }catch(_){}
     }
 
-    function showToast(msg){
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(()=>toast.classList.remove('show'), 1300);
-    }
-
-    // Deep links v2RayTun (официальный формат)
-    const makeTunDeep = (payload) => 'v2raytun://import/' + encodeURIComponent(payload);
-    const makeIntent  = (payload) => 'intent://import/' + encodeURIComponent(payload) + '#Intent;scheme=v2raytun;package=com.v2raytun.android;end';
-
-    // ТЕПЕРЬ: /vless?id= возвращает raw vless://..., /sub?id= возвращает base64-подписку
-    async function getVLESS(){
-      const r = await fetch('/vless?id='+id, { cache:'no-store' });
-      if(!r.ok) throw new Error('/vless?id='+id+' not available');
-      return (await r.text()).trim();
-    }
-
     async function init(){
+      if (!Number.isFinite(id) || id < 1) {
+        btnIOS.classList.add('hid'); btnAW.classList.add('hid'); btnCopy.classList.add('hid'); return;
+      }
       await ensureSW();
 
-      // 1) raw VLESS (для iOS и копирования)
-      const vless = await getVLESS();
+      const { vlessRaw, hasSubscription, subUrl } = await probeData();
 
-      // 2) iOS / Mac — БЕЗ ИЗМЕНЕНИЙ: конфигурация (vless://...) прямо в диплинке
-      const deepIOS = makeTunDeep(vless);
-      btnIOS.href = deepIOS;
+      // iOS/Mac — предпочитаем raw VLESS; если нет — подписка
+      const iosPayload = vlessRaw ?? subUrl;
+      btnIOS.href = makeTunDeep(iosPayload);
 
-      // 3) Android / Windows — ПО ТЗ: сначала конфиг (vless://...), затем подписка, затем Intent (Android)
-      const subUrl   = location.origin + '/sub?id=' + id;  // ожидание: base64 subscription
-      const deepVless = makeTunDeep(vless);                // конфигурация
-      const deepSub   = makeTunDeep(subUrl);               // подписка
-      const intentSub = makeIntent(subUrl);                // Intent на Android
+      // Android/Windows — по ТЗ: диплинк v2raytun://import/{ENCODED(payload)}
+      // payload: если есть подписка — лучше её; иначе raw VLESS; если ни того, ни другого — остаётся subUrl как запас.
+      const primaryPayload = hasSubscription ? subUrl : (vlessRaw ?? subUrl);
+      const deepAW   = makeTunDeep(primaryPayload);
+      const intentAW = makeIntent(primaryPayload);
 
-      btnAW.addEventListener('click', (e)=>{
+      btnAW.onclick = (e)=>{
         e.preventDefault();
-        // 1) Пытаемся сразу конфигурацию (часть пользователей любит без подписки)
-        try { location.href = deepVless; } catch(_) {}
-        // 2) Через 800 мс пробуем подписку (универсальный устойчивый формат)
-        setTimeout(()=> {
-          try { location.href = deepSub; } catch(_) {}
-          // 3) Ещё через 700 мс — Intent для Android, на Windows откроем страницу подписки
-          setTimeout(()=> {
-            if (isAndroid) {
-              try { location.href = intentSub; } catch(_) {}
-            } else if (isWindows) {
-              try { location.href = subUrl; } catch(_) {}
-            }
-          }, 700);
-        }, 800);
-      });
+        // 1) v2raytun deep
+        try { location.href = deepAW; } catch(_) {}
+        // 2) fallback: Android → Intent; Windows → открыть подписку в браузере
+        setTimeout(()=>{ if (isAndroid) { try { location.href = intentAW; } catch(_) {} } else if (isWindows) { try { location.href = subUrl; } catch(_) {} } }, 800);
+      };
 
-      // 4) Скопировать ключ (raw VLESS для всех случаев)
-      btnCopy.addEventListener('click', async ()=>{
-        try{
-          await navigator.clipboard.writeText(vless);
-          showToast('Ключ скопирован');
-        }catch{
-          const ta = document.createElement('textarea');
-          ta.value = vless; document.body.appendChild(ta);
-          ta.select(); document.execCommand('copy'); ta.remove();
-          showToast('Ключ скопирован');
+      // Copy: если есть raw vless — копируем его, иначе — URL подписки
+      btnCopy.onclick = async ()=>{
+        const toCopy = vlessRaw ?? subUrl;
+        try { await navigator.clipboard.writeText(toCopy); showToast('Скопировано'); }
+        catch {
+          const ta=document.createElement('textarea'); ta.value=toCopy; document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy'); ta.remove(); showToast('Скопировано');
         }
-      });
+      };
 
-      // Автопредложение: если Android и не внутри in-app, пробуем подписку, затем Intent
-      if(isAndroid && !isInApp){
-        try { location.href = deepSub; } catch(_) {}
-        setTimeout(()=>{ try { location.href = intentSub; } catch(_) {} }, 900);
+      // Gentle auto-suggest for Android outside in-app
+      if (isAndroid && !isInApp) {
+        try { location.href = deepAW; } catch(_) {}
+        setTimeout(()=>{ try { location.href = intentAW; } catch(_) {} }, 900);
       }
     }
+
+    init().catch(console.error);
   </script>
 </body>
 </html>
