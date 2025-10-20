@@ -198,15 +198,20 @@
       const linkIOS = deepV2raytun(vless);
       btnIOS.href = linkIOS;
 
-      // Android / Windows — intent, затем fallback на v2raytun://
+      // Android / Windows
       const linkIntent = intentV2raytun(vless);
-      const linkDirect = linkIOS;
+      const linkDirect = linkIOS; // v2raytun://import/...
 
-      btnAndroid.addEventListener('click', (e)=>{
-        e.preventDefault();
-        try{ location.href = linkIntent; }catch(_){}
-        setTimeout(()=>{ try{ location.href = linkDirect; }catch(_){} }, 600);
-      });
+      // — На Android: href=intent и фолбэк на v2raytun://
+      // — На Windows/десктопе: сразу v2raytun:// через href
+      if (isAndroid) {
+        btnAndroid.href = linkIntent;
+        btnAndroid.addEventListener('click', ()=>{
+          setTimeout(()=>{ try{ location.href = linkDirect; }catch(_){} }, 800);
+        });
+      } else {
+        btnAndroid.href = linkDirect;
+      }
 
       // Скопировать ключ
       btnCopy.addEventListener('click', async ()=>{
@@ -221,9 +226,10 @@
         }
       });
 
-      // Автопредложение на Android (вне in‑app)
+      // Автопредложение на Android (вне in‑app) + фолбэк
       if(isAndroid && !isInApp){
         try{ location.href = linkIntent; }catch(_){}
+        setTimeout(()=>{ try{ location.href = linkDirect; }catch(_){} }, 800);
       }
     }
   </script>
