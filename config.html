@@ -6,9 +6,9 @@
   <title>Открытие v2RayTun…</title>
   <style>
     body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:#0f1220;color:#e9edf3;display:grid;place-items:center;min-height:100dvh}
-    .card{max-width:560px;margin:16px;padding:20px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.04)}
-    .btn{display:inline-block;margin-top:10px;padding:12px 14px;border-radius:12px;background:#1a2138;color:#e9edf3;text-decoration:none}
-    .muted{opacity:.8}
+    .card{max-width:560px;margin:16px;padding:20px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.04);text-align:center}
+    .btn{display:inline-block;margin-top:12px;padding:12px 14px;border-radius:12px;background:#1a2138;color:#e9edf3;text-decoration:none}
+    .muted{opacity:.85}
   </style>
 </head>
 <body>
@@ -19,25 +19,22 @@
   </div>
 
   <script>
-    (function(){
+    (async function(){
       const qs = new URLSearchParams(location.search);
       const id = parseInt(qs.get('id'), 10);
       if(!Number.isFinite(id) || id < 1){ return; }
 
-      const subUrl = location.origin + '/sub?id=' + id; // подписка по вашему ключу
+      // Берём ТОТ ЖЕ vless-ключ, что и для iPhone
+      const r = await fetch('/sub?id=' + id, { cache:'no-store' });
+      if(!r.ok){ return; }
+      const vless = (await r.text()).trim(); // vless://...
 
-      const makeIntent = (payload) => {
-        const enc = encodeURIComponent(payload);
-        const fb  = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
-        return `intent://import/${enc}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=${fb};end`;
-      };
-      const makeDeep = (payload) => 'v2raytun://import/' + encodeURIComponent(payload);
+      // Формируем intent для v2RayTun с ЭТИМ ЖЕ ключом
+      const enc = encodeURIComponent(vless);
+      const fb  = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
+      const intent = `intent://import/${enc}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=${fb};end`;
 
-      const intentLink = makeIntent(subUrl); // рекомендуемый формат: подписка как URL
-      const deepLink   = makeDeep(subUrl);   // резерв
-
-      try { location.href = intentLink; } catch(_) {}
-      setTimeout(()=>{ try { location.href = deepLink; } catch(_) {} }, 800);
+      try { location.href = intent; } catch(_) {}
     })();
   </script>
 </body>
