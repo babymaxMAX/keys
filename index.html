@@ -157,47 +157,38 @@
       init().catch(console.error);
     }
 
-    async function ensureSW(){
-      if(!('serviceWorker' in navigator)) return;
-      try{
-        await navigator.serviceWorker.register('/sw.js',{scope:'/'});
-        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,150));
-      }catch(_){}
-    }
-
     function showToast(msg){
       toast.textContent = msg;
       toast.classList.add('show');
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // Схемы диплинков v2RayTun
+    // v2RayTun deep links
     function deepV2raytun(payload){ return 'v2raytun://import/' + encodeURIComponent(payload); }
-    function intentV2raytun(payload){
-      const enc = encodeURIComponent(payload);
-      const fb  = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
-      return `intent://import/${enc}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=${fb};end`;
-    }
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
       if(!r.ok) throw new Error('sub?id='+id+' not available');
-      return (await r.text()).trim(); // та же vless:// строка для iOS и Android
+      return (await r.text()).trim(); // ровно одна строка vless://...
     }
 
     async function init(){
-      await ensureSW();
+      const vless = await getVLESS(); // ОДИН и тот же ключ для iPhone и Android
 
-      // Берём тот же самый ключ
-      const vless = await getVLESS();
-
-      // iPhone / Mac — как и раньше
+      // iPhone / Mac — одиночный deep link (без изменений)
       btnIOS.href = deepV2raytun(vless);
 
-      // Android / Windows — одиночный переход, без дополнительных попыток
-      btnAndroid.href = intentV2raytun(vless);
+      // Android — ссылка-мост по образцу, указывающая на наш config.html
+      const configUrl = location.origin + '/config.html?id=' + id;
+      const bridgeUrl = 'https://deeplink.website/?url=' + encodeURIComponent(configUrl);
+      if (isAndroid) {
+        btnAndroid.href = bridgeUrl; // один переход, без дополнительных попыток
+      } else {
+        // Windows/десктоп: если протокол зарегистрирован — можно открыть напрямую
+        btnAndroid.href = deepV2raytun(vless);
+      }
 
-      // Копирование ключа
+      // Скопировать ключ
       btnCopy.addEventListener('click', async ()=>{
         try{
           await navigator.clipboard.writeText(vless);
