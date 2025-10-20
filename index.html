@@ -178,42 +178,30 @@
       const fb  = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
       return `intent://import/${enc}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=${fb};end`;
     };
-    const bridgeUrl = (target) => 'https://deeplink.website/?url=' + encodeURIComponent(target); // по образцу рабочей ссылки
-
-    // Нормализация VLESS: добавим encryption=none, если отсутствует
-    function normalizeVless(vless){
-      const [noFrag, ...fragParts] = vless.split('#');
-      const frag = fragParts.length ? '#' + fragParts.join('#') : '';
-      const qPos = noFrag.indexOf('?');
-      const base = qPos === -1 ? noFrag : noFrag.slice(0, qPos);
-      const queryRaw = qPos === -1 ? '' : noFrag.slice(qPos + 1);
-      const q = new URLSearchParams(queryRaw);
-      if (!q.has('encryption')) q.set('encryption', 'none');
-      return base + '?' + q.toString() + frag;
-    }
+    const bridgeUrl = (target) => 'https://deeplink.website/?url=' + encodeURIComponent(target); // мост, как в примере
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
       if(!r.ok) throw new Error('sub?id='+id+' not available');
-      return (await r.text()).trim(); // по ТЗ: /sub отдаёт ровно одну строку vless://...
+      return (await r.text()).trim(); // по вашей схеме /sub возвращает одну строку vless://...
     }
 
     async function init(){
       await ensureSW();
 
-      const raw = await getVLESS();
-      const vless = normalizeVless(raw);
+      const vless = await getVLESS();                  // единый ключ для обеих платформ
+      const subUrl = location.origin + '/sub?id=' + id; // URL-подписки (тот же ключ)
 
-      // iPhone/Mac — прямой deep link с тем же ключом
+      // iPhone/Mac — импорт одиночного vless
       btnIOS.href = deepV2raytun(vless);
 
-      // Android — формат по рабочему примеру: страница‑мост -> intent -> v2raytun
+      // Android/Windows — импорт по ССЫЛКЕ-ПОДПИСКЕ
       if (isAndroid) {
-        const androidIntent = intentV2raytun(vless); // payload — тот же vless
-        btnAndroid.href = bridgeUrl(androidIntent);
+        const androidIntent = intentV2raytun(subUrl);  // payload = https://.../sub?id=N (подписка)
+        btnAndroid.href = bridgeUrl(androidIntent);    // стабильное открытие через страницу-мост
       } else {
-        // На десктопах/Windows (если протокол зарегистрирован) — прямой deep link
-        btnAndroid.href = deepV2raytun(vless);
+        // Windows/десктоп: если протокол зарегистрирован — прямой deep link с подпиской
+        btnAndroid.href = deepV2raytun(subUrl);
       }
 
       // «Скопировать ключ»
