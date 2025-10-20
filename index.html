@@ -234,9 +234,9 @@
       if (isAndroid) {
         // По клику: копируем ключ и пытаемся по цепочке открыть клиент
         btnAndroid.href = linkIntentVTT;
-        btnAndroid.addEventListener('click', async (e)=>{
+        btnAndroid.addEventListener('click', (e)=>{
           e.preventDefault();
-          await safeCopy(vlessFixed);                      // чтобы можно было "Вставить из буфера"
+          safeCopy(vlessFixed).catch(console.error);        // чтобы можно было "Вставить из буфера"
           // 1) v2raytun (intent)
           try{ location.href = linkIntentVTT; }catch(_){}
           // 2) v2raytun (deep link)
