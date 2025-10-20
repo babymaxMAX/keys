@@ -78,7 +78,7 @@
   <div class="shell">
     <div class="brand">
       <div class="logo" aria-hidden="true">
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="#111"><path d="M12 2l.894 2.763h2.905l-2.351 1.708.897 2.762Л12 7.525 9.655 9.233l.897-2.762L8.2 4.763h2.905L12 2z"/></svg>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="#111"><path d="M12 2l.894 2.763h2.905l-2.351 1.708.897 2.762L12 7.525 9.655 9.233l.897-2.762L8.2 4.763h2.905L12 2z"/></svg>
       </div>
       <div>
         <div class="title">LsJ VPN</div>
@@ -129,9 +129,9 @@
       <div class="hr"></div>
 
       <div class="h2">🚨 ВАЖНО! НЕ ПЕРЕСЫЛАЙТЕ ЭТОТ КЛЮЧ!</div>
-      <p>Один ключ — один человек. Если кому‑то нужен VPN, пусть напишет нам — выдадим уникальный ключ.</p>
+      <p>Это ссылка АМАНАТ. Один ключ — один человек.</p>
 
-      <p class="note" style="margin-top:18px">📿 Просим вас почитать за нашу команду LsJ VPN ДУА. Пусть Всевышний воздаст вам во многократном размере. Альхамдулиллях. ❤️</p>
+      <p class="note" style="margin-top:18px">📿 Просим вас почитать за нашу команду LsJ VPN ДУА. ❤️</p>
     </div>
   </div>
 
@@ -140,7 +140,6 @@
   <script>
     const ua = navigator.userAgent || "";
     const isAndroid = /Android/i.test(ua);
-    const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
 
     const qs = new URLSearchParams(location.search);
     const id = parseInt(qs.get('id'), 10);
@@ -172,65 +171,39 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // Правильные схемы диплинков для v2raytun / v2rayNG
     const deepV2raytun = (payload) => 'v2raytun://import/' + encodeURIComponent(payload);
     const intentV2raytun = (payload) => {
       const enc = encodeURIComponent(payload);
       const fb  = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
       return `intent://import/${enc}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=${fb};end`;
     };
-    const deepV2rayngFromUrl = (url) => 'v2rayng://install-config?url=' + encodeURIComponent(url);
+    const bridgeUrl = (target) => 'https://deeplink.website/?url=' + encodeURIComponent(target);
 
-    // Получаем «сырой» VLESS для iOS; если /sub станет base64 — вытащим первую vless:// строку
     async function getVLESS(){
-      const r = await fetch('/sub?id=' + id, { cache:'no-store' });
-      if(!r.ok) throw new Error('sub?id=' + id + ' not available');
-      const txt = (await r.text()).trim();
-      if (/^vless:\/\//i.test(txt)) return txt;
-
-      // возможна base64-подписка: декодируем и берём первую vless:// строку
-      const b64 = txt.replace(/\s+/g,'');
-      if (/^[A-Za-z0-9+/=]+$/.test(b64) && b64.length % 4 === 0) {
-        try {
-          const decoded = atob(b64);
-          const line = decoded.split(/\r?\n/).find(s => /^vless:\/\//i.test(s.trim()));
-          if (line) return line.trim();
-        } catch(_) {}
-      }
-      throw new Error('Unsupported /sub payload: expected vless:// or base64 subscription');
+      const r = await fetch('/sub?id='+id, { cache:'no-store' });
+      if(!r.ok) throw new Error('sub?id='+id+' not available');
+      return (await r.text()).trim();
     }
 
     async function init(){
       await ensureSW();
 
-      const vless = await getVLESS();                 // для iOS (одиночный профиль)
-      const subUrl = location.origin + '/sub?id=' + id; // для Android/Windows (как подписка)
-
-      // iOS / Mac — одиночный deep link
+      // iOS — одиночный профиль через deep link
+      const vless = await getVLESS();
       btnIOS.href = deepV2raytun(vless);
 
-      // Android / Windows
-      const linkIntentVTT = intentV2raytun(subUrl);   // приоритет на Android
-      const linkDirectVTT = deepV2raytun(vless);      // прямой deep‑link (Windows и резерв)
-      const linkV2NG      = deepV2rayngFromUrl(subUrl);
-
+      // ANDROID: один-единственный href как в рабочем примере (через deeplink.website)
+      const subUrl = location.origin + '/sub?id=' + id;               // подписка/ключ по вашему id
+      const androidIntent = intentV2raytun(subUrl);                   // intent к v2raytun с fallback в Play
+      const androidBridge  = bridgeUrl(androidIntent);                // обёртка-страница для стабильного открытия
       if (isAndroid) {
-        // Важно: НИКАКОГО preventDefault/await до первой навигации
-        btnAndroid.href = linkIntentVTT;
-        btnAndroid.addEventListener('click', () => {
-          // Фолбэки — асинхронно после попытки открыть intent://
-          setTimeout(()=>{ try{ location.href = linkDirectVTT; }catch(_){} }, 800);
-          setTimeout(()=>{ try{ location.href = linkV2NG; }catch(_){} }, 1600);
-        }, { passive: true });
-
-        // В in‑app браузерах intent:// часто режется — автопереход не делаем
-        if (!isInApp) { try{ location.href = linkIntentVTT; }catch(_){} }
+        btnAndroid.href = androidBridge;                              // НИКАКОГО авто‑редиректа до нажатия
       } else {
-        // Windows / десктоп — если протокол зарегистрирован, импорт откроется
-        btnAndroid.href = linkDirectVTT;
+        // На Windows/десктопах оставим прямой deep link (если протокол зарегистрирован)
+        btnAndroid.href = deepV2raytun(vless);
       }
 
-      // «Скопировать ключ»
+      // Кнопка «Скопировать ключ»
       btnCopy.addEventListener('click', async ()=>{
         try{
           await navigator.clipboard.writeText(vless);
