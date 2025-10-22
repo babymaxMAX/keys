@@ -141,31 +141,36 @@
     // iOS/macOS — кодируем всю строку целиком
     const deepLinkIOS = (vless) => 'v2raytun://import/' + encodeURIComponent(vless);
 
-    // Android/Windows — "почти сырой" VLESS, encodeURI сохраняет : / ? & =, # заменяем на %23
-    const deepLinkAndroid = (vless) => 'v2raytun://import/' + encodeURI(vless).replace(/#/g,'%23');
-
-    // Intent fallback на случай блокировок custom-scheme
+    // Android — кодируем ВСЮ строку (чтобы не терялись ? & =), intent как основной
+    const deepLinkAndroid = (vless) => 'v2raytun://import/' + encodeURIComponent(vless);
     function intentLink(vless){
       const fb = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
-      return 'intent://import/' + encodeURIComponent(vless) + '#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=' + fb + ';end';
+      const enc = encodeURIComponent(vless);
+      return 'intent://import/' + enc + '#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=' + fb + ';end';
     }
 
-    // Нормализация под Android: :port/? → :port?, encryption=none, spx=%2F, снять двойное кодирование в #name
+    // Нормализация под Android: :port/? → :port?, encryption=none, spx=%2F, снять двойную кодировку в #name
     function normalizeVlessForAndroid(v){
       let s = (v||'').trim();
+      // :2053/? -> :2053?
       s = s.replace(/:(\d+)\/\?/, ':$1?');
+
       const qIndex = s.indexOf('?');
       const hIndex = s.indexOf('#');
       const base  = qIndex === -1 ? s : s.slice(0, qIndex);
       const query = qIndex === -1 ? '' : (hIndex === -1 ? s.slice(qIndex + 1) : s.slice(qIndex + 1, hIndex));
       const hash  = hIndex === -1 ? '' : s.slice(hIndex + 1);
+
       const params = new URLSearchParams(query);
       if (!params.has('encryption')) params.set('encryption','none');
       // Android любит %2F (однократно), не '/'
       if (params.has('spx')) params.set('spx','%2F');
+
       const fixedQuery = params.toString();
+
       let fixedHash = hash;
       if (fixedHash) { try { fixedHash = decodeURIComponent(fixedHash); } catch(_) {} }
+
       return base + (fixedQuery ? '?' + fixedQuery : '') + (fixedHash ? '#' + fixedHash : '');
     }
 
@@ -181,16 +186,15 @@
       // iOS — без изменений
       btnIOS.href = deepLinkIOS(vlessRaw);
 
-      // Android — нормализуем и используем RAW deeplink + Intent fallback
+      // Android — нормализуем и используем intent + fallback на v2raytun://
       const vlessAndroid = normalizeVlessForAndroid(vlessRaw);
-      const dpa = deepLinkAndroid(vlessAndroid);
-      const ila = intentLink(vlessAndroid);
+      const primaryIntent = intentLink(vlessAndroid);
+      const fallbackDeep  = deepLinkAndroid(vlessAndroid);
 
-      btnAndroid.href = dpa;
-      btnAndroid.addEventListener('click', (e)=>{
-        e.preventDefault();
-        try{ window.location.href = dpa; }catch(_){}
-        setTimeout(()=>{ try{ window.location.href = ila; }catch(_){} }, 700);
+      btnAndroid.href = primaryIntent;
+      btnAndroid.addEventListener('click', ()=>{
+        // если приложение не перехватило intent — пробуем v2raytun://
+        setTimeout(()=>{ try{ location.href = fallbackDeep; }catch(_){} }, 700);
       }, { passive:true });
 
       // Копирование — нормализованный VLESS
