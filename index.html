@@ -59,7 +59,7 @@
     }
     .btn-ghost{
       color:var(--text); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      border:1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      border:1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,0.35)
     }
     .btn-store{ background: linear-gradient(180deg, #1e2435, #151a28); color:#e7ebf5; border:1px solid var(--line) }
     .note{font-size:13px; color:var(--muted)}
@@ -150,7 +150,7 @@
       return 'intent://import/' + encodeURIComponent(vless) + '#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=' + fb + ';end';
     }
 
-    // Нормализация под Android: :port/? → :port?, encryption=none, spx='/', снять двойное кодирование в #name
+    // Нормализация под Android: :port/? → :port?, encryption=none, spx=%2F, снять двойное кодирование в #name
     function normalizeVlessForAndroid(v){
       let s = (v||'').trim();
       s = s.replace(/:(\d+)\/\?/, ':$1?');
@@ -161,7 +161,8 @@
       const hash  = hIndex === -1 ? '' : s.slice(hIndex + 1);
       const params = new URLSearchParams(query);
       if (!params.has('encryption')) params.set('encryption','none');
-      if (params.has('spx')) params.set('spx','/');
+      // Android любит %2F (однократно), не '/'
+      if (params.has('spx')) params.set('spx','%2F');
       const fixedQuery = params.toString();
       let fixedHash = hash;
       if (fixedHash) { try { fixedHash = decodeURIComponent(fixedHash); } catch(_) {} }
