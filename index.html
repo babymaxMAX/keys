@@ -6,70 +6,29 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111111">
   <style>
-    :root{
-      --bg-1:#0b0b0f; --bg-2:#101218;
-      --brand:#f7c23e; --brand-2:#ff9900;
-      --text:#e9edf3; --muted:#a7adba;
-      --card:#141825; --glow:rgba(247,194,62,0.25);
-      --line:rgba(255,255,255,0.12);
-    }
+    :root{--bg-1:#0b0b0f;--bg-2:#101218;--brand:#f7c23e;--brand-2:#ff9900;--text:#e9edf3;--muted:#a7adba;--card:#141825;--glow:rgba(247,194,62,0.25);--line:rgba(255,255,255,0.12)}
     html,body{height:100%}
-    body{
-      margin:0; color:var(--text);
-      background: radial-gradient(1200px 800px at 70% -10%, #1c2135 0%, transparent 70%),
-                  radial-gradient(900px 700px at 0% 100%, #1b1626 0%, transparent 65%),
-                  linear-gradient(180deg, var(--bg-1), var(--bg-2));
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", "Segoe UI Emoji";
-    }
-    .shell{max-width:880px; margin:0 auto; padding:28px 18px 40px}
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border:1px solid var(--line);
-      border-radius:18px; padding:22px 18px;
-      box-shadow: 0 10px 35px rgba(0,0,0,0.45), 0 0 80px 0 var(--glow);
-      backdrop-filter: blur(6px);
-    }
-    .brand{display:flex; align-items:center; gap:16px; margin:10px 0 16px}
-    .logo{
-      width:64px; height:64px; border-radius:50%;
-      display:grid; place-items:center; flex:0 0 64px;
-      background: radial-gradient(circle at 50% 40%, var(--brand) 0%, var(--brand-2) 60%, #a96700 100%);
-      box-shadow: 0 0 30px var(--glow), 0 8px 24px rgba(0,0,0,0.45);
-    }
-    .title{font-weight:900; font-size:28px; letter-spacing:0.2px}
-    .sub{color:var(--muted); margin-top:2px}
-    .hr{height:1px; background:var(--line); margin:18px 0}
-    .h2{font-size:18px; font-weight:800; margin:14px 0 10px}
-    p{margin:8px 0 10px; color:var(--text)}
+    body{margin:0;color:var(--text);background:radial-gradient(1200px 800px at 70% -10%,#1c2135 0%,transparent 70%),radial-gradient(900px 700px at 0% 100%,#1b1626 0%,transparent 65%),linear-gradient(180deg,var(--bg-1),var(--bg-2));font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Helvetica Neue","Segoe UI Emoji")}
+    .shell{max-width:880px;margin:0 auto;padding:28px 18px 40px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid var(--line);border-radius:18px;padding:22px 18px;box-shadow:0 10px 35px rgba(0,0,0,0.45),0 0 80px 0 var(--glow);backdrop-filter:blur(6px)}
+    .brand{display:flex;align-items:center;gap:16px;margin:10px 0 16px}
+    .logo{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;flex:0 0 64px;background:radial-gradient(circle at 50% 40%,var(--brand) 0%,var(--brand-2) 60%,#a96700 100%);box-shadow:0 0 30px var(--glow),0 8px 24px rgba(0,0,0,0.45)}
+    .title{font-weight:900;font-size:28px;letter-spacing:.2px}
+    .sub{color:var(--muted);margin-top:2px}
+    .hr{height:1px;background:var(--line);margin:18px 0}
+    .h2{font-size:18px;font-weight:800;margin:14px 0 10px}
+    p{margin:8px 0 10px}
     .muted{color:var(--muted)}
-    .grid2{display:grid; grid-template-columns:1fr; gap:12px}
-    @media (min-width:640px){ .grid2{grid-template-columns:1fr 1fr} }
-    .btn{
-      -webkit-tap-highlight-color: rgba(0,0,0,0);
-      appearance:none; border:none; cursor:pointer; text-decoration:none;
-      display:inline-flex; align-items:center; justify-content:center; gap:10px;
-      font-weight:800; font-size:16px; letter-spacing:0.2px;
-      border-radius:14px; padding:14px 16px; min-height:54px; width:100%;
-      color:#101015; transition: transform .08s ease, box-shadow .14s ease, filter .14s ease;
-    }
-    .btn:active{ transform: translateY(1px) scale(.995) }
-    .btn-primary{
-      background: linear-gradient(180deg, var(--brand) 0%, var(--brand-2) 86%);
-      box-shadow: 0 14px 36px rgba(247,194,62,0.28), 0 2px 0 rgba(255,255,255,0.18) inset;
-    }
-    .btn-ghost{
-      color:var(--text); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      border:1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,0.35)
-    }
-    .btn-store{ background: linear-gradient(180deg, #1e2435, #151a28); color:#e7ebf5; border:1px solid var(--line) }
-    .note{font-size:13px; color:var(--muted)}
-    .toast{
-      position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(30px);
-      background:#0f1220; color:var(--text); border:1px solid var(--line);
-      padding:10px 14px; border-radius:10px; opacity:0; transition:.22s ease; pointer-events:none;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.55); font-size:14px;
-    }
-    .toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
+    .grid2{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:640px){.grid2{grid-template-columns:1fr 1fr}}
+    .btn{-webkit-tap-highlight-color:rgba(0,0,0,0);appearance:none;border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:16px;letter-spacing:.2px;border-radius:14px;padding:14px 16px;min-height:54px;width:100%;color:#101015;transition:transform .08s ease,box-shadow .14s ease,filter .14s ease}
+    .btn:active{transform:translateY(1px) scale(.995)}
+    .btn-primary{background:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 86%);box-shadow:0 14px 36px rgba(247,194,62,0.28),0 2px 0 rgba(255,255,255,0.18) inset}
+    .btn-ghost{color:var(--text);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03));border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,0.35)}
+    .btn-store{background:linear-gradient(180deg,#1e2435,#151a28);color:#e7ebf5;border:1px solid var(--line)}
+    .note{font-size:13px;color:var(--muted)}
+    .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:#0f1220;color:var(--text);border:1px solid var(--line);padding:10px 14px;border-radius:10px;opacity:0;transition:.22s ease;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,0.55);font-size:14px}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .hid{display:none}
   </style>
 </head>
@@ -86,7 +45,7 @@
     </div>
 
     <div class="card">
-      <div style="font-size:18px; font-weight:800; margin-bottom:6px">💻 LsJ VPN по подписке</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:6px">💻 LsJ VPN по подписке</div>
 
       <div class="hr"></div>
 
@@ -132,6 +91,14 @@
       init().catch(console.error);
     }
 
+    async function ensureSW(){
+      if(!('serviceWorker' in navigator)) return;
+      try{
+        await navigator.serviceWorker.register('/sw.js',{scope:'/'});
+        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,120));
+      }catch(_){}
+    }
+
     function showToast(msg){
       toast.textContent = msg;
       toast.classList.add('show');
@@ -141,38 +108,9 @@
     // iOS/macOS — кодируем всю строку целиком
     const deepLinkIOS = (vless) => 'v2raytun://import/' + encodeURIComponent(vless);
 
-    // Android — кодируем ВСЮ строку (чтобы не терялись ? & =), intent как основной
-    const deepLinkAndroid = (vless) => 'v2raytun://import/' + encodeURIComponent(vless);
-    function intentLink(vless){
-      const fb = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
-      const enc = encodeURIComponent(vless);
-      return 'intent://import/' + enc + '#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=' + fb + ';end';
-    }
-
-    // Нормализация под Android: :port/? → :port?, encryption=none, spx=%2F, снять двойную кодировку в #name
-    function normalizeVlessForAndroid(v){
-      let s = (v||'').trim();
-      // :2053/? -> :2053?
-      s = s.replace(/:(\d+)\/\?/, ':$1?');
-
-      const qIndex = s.indexOf('?');
-      const hIndex = s.indexOf('#');
-      const base  = qIndex === -1 ? s : s.slice(0, qIndex);
-      const query = qIndex === -1 ? '' : (hIndex === -1 ? s.slice(qIndex + 1) : s.slice(qIndex + 1, hIndex));
-      const hash  = hIndex === -1 ? '' : s.slice(hIndex + 1);
-
-      const params = new URLSearchParams(query);
-      if (!params.has('encryption')) params.set('encryption','none');
-      // Android любит %2F (однократно), не '/'
-      if (params.has('spx')) params.set('spx','%2F');
-
-      const fixedQuery = params.toString();
-
-      let fixedHash = hash;
-      if (fixedHash) { try { fixedHash = decodeURIComponent(fixedHash); } catch(_) {} }
-
-      return base + (fixedQuery ? '?' + fixedQuery : '') + (fixedHash ? '#' + fixedHash : '');
-    }
+    // Deeplink-страница (мост) как в рабочем варианте
+    const makeConfigUrl = (origin, id) => `${origin}/config.html?id=${id}`;
+    const makeDeeplinkBridge = (configUrl) => `https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
@@ -180,33 +118,55 @@
       return (await r.text()).trim(); // одна строка vless://...
     }
 
+    async function copyConfig(configUrl){
+      try{
+        const t = await fetch(configUrl,{cache:'no-store'}).then(r=>r.text());
+        await navigator.clipboard.writeText(t.trim());
+        showToast('Ключ скопирован');
+      }catch(_){}
+    }
+
     async function init(){
+      await ensureSW();
+
       const vlessRaw = await getVLESS();
 
       // iOS — без изменений
       btnIOS.href = deepLinkIOS(vlessRaw);
 
-      // Android — нормализуем и используем intent + fallback на v2raytun://
-      const vlessAndroid = normalizeVlessForAndroid(vlessRaw);
-      const primaryIntent = intentLink(vlessAndroid);
-      const fallbackDeep  = deepLinkAndroid(vlessAndroid);
+      // Android/Windows — deeplink к нашей config.html?id=N через страницу‑мост
+      const configUrl = makeConfigUrl(location.origin, id);
+      const deeplinkUrl = makeDeeplinkBridge(configUrl);
 
-      btnAndroid.href = primaryIntent;
-      btnAndroid.addEventListener('click', ()=>{
-        // если приложение не перехватило intent — пробуем v2raytun://
-        setTimeout(()=>{ try{ location.href = fallbackDeep; }catch(_){} }, 700);
+      btnAndroid.href = deeplinkUrl;
+      btnAndroid.addEventListener('click', (e)=>{
+        e.preventDefault();
+        let step = 0;
+        const tryOpen = ()=>{
+          step++;
+          try{
+            if(step===1){ location.href = deeplinkUrl; }
+            else if(step===2){
+              const a=document.createElement('a'); a.href=deeplinkUrl; a.style.display='none';
+              document.body.appendChild(a); a.click(); a.remove();
+            }else{
+              window.open(deeplinkUrl, '_blank', 'noopener');
+            }
+          }catch(_){}
+          if(step<3) setTimeout(tryOpen, 180);
+          else setTimeout(()=>copyConfig(configUrl), 300); // резерв: скопировать ключ
+        };
+        setTimeout(tryOpen, 60);
       }, { passive:true });
 
-      // Копирование — нормализованный VLESS
+      // Копирование — сырой ключ
       btnCopy.addEventListener('click', async ()=>{
         try{
-          await navigator.clipboard.writeText(vlessAndroid);
+          await navigator.clipboard.writeText(vlessRaw);
           showToast('Ключ скопирован');
         }catch{
-          const ta = document.createElement('textarea');
-          ta.value = vlessAndroid; document.body.appendChild(ta);
-          ta.select(); document.execCommand('copy'); ta.remove();
-          showToast('Ключ скопирован');
+          const ta=document.createElement('textarea'); ta.value=vlessRaw; document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy'); ta.remove(); showToast('Ключ скопирован');
         }
       });
     }
