@@ -42,7 +42,6 @@
     .h2{font-size:18px; font-weight:800; margin:14px 0 10px}
     p{margin:8px 0 10px; color:var(--text)}
     .muted{color:var(--muted)}
-    ul{margin:8px 0 8px 20px}
     .grid2{display:grid; grid-template-columns:1fr; gap:12px}
     @media (min-width:640px){ .grid2{grid-template-columns:1fr 1fr} }
     .btn{
@@ -139,46 +138,33 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // iOS/macOS — кодируем ВЕСЬ VLESS целиком
+    // iOS/macOS — кодируем всю строку целиком
     const deepLinkIOS = (vless) => 'v2raytun://import/' + encodeURIComponent(vless);
 
-    // Android/Windows — "почти сырой" VLESS: encodeURI и # -> %23
+    // Android/Windows — "почти сырой" VLESS, encodeURI сохраняет : / ? & =, # заменяем на %23
     const deepLinkAndroid = (vless) => 'v2raytun://import/' + encodeURI(vless).replace(/#/g,'%23');
 
-    // Intent fallback
-    const intentLink = (vless) => {
+    // Intent fallback на случай блокировок custom-scheme
+    function intentLink(vless){
       const fb = encodeURIComponent('https://play.google.com/store/apps/details?id=com.v2raytun.android');
       return 'intent://import/' + encodeURIComponent(vless) + '#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=' + fb + ';end';
-    };
+    }
 
-    // Нормализация под Android:
-    // - :port/? -> :port?
-    // - добавляем encryption=none (если нет)
-    // - spx=/ (однократно)
-    // - снимаем двойную кодировку во фрагменте (#...)
+    // Нормализация под Android: :port/? → :port?, encryption=none, spx='/', снять двойное кодирование в #name
     function normalizeVlessForAndroid(v){
-      let s = v.trim();
-
-      // :2053/? -> :2053?
+      let s = (v||'').trim();
       s = s.replace(/:(\d+)\/\?/, ':$1?');
-
       const qIndex = s.indexOf('?');
       const hIndex = s.indexOf('#');
       const base  = qIndex === -1 ? s : s.slice(0, qIndex);
       const query = qIndex === -1 ? '' : (hIndex === -1 ? s.slice(qIndex + 1) : s.slice(qIndex + 1, hIndex));
       const hash  = hIndex === -1 ? '' : s.slice(hIndex + 1);
-
       const params = new URLSearchParams(query);
-      if (!params.has('encryption')) params.set('encryption', 'none');
-      if (params.has('spx')) params.set('spx', '/');
-
+      if (!params.has('encryption')) params.set('encryption','none');
+      if (params.has('spx')) params.set('spx','/');
       const fixedQuery = params.toString();
-
       let fixedHash = hash;
-      if (fixedHash) {
-        try { fixedHash = decodeURIComponent(fixedHash); } catch(_) {}
-      }
-
+      if (fixedHash) { try { fixedHash = decodeURIComponent(fixedHash); } catch(_) {} }
       return base + (fixedQuery ? '?' + fixedQuery : '') + (fixedHash ? '#' + fixedHash : '');
     }
 
@@ -191,17 +177,20 @@
     async function init(){
       const vlessRaw = await getVLESS();
 
-      // iOS — БЕЗ изменений
+      // iOS — без изменений
       btnIOS.href = deepLinkIOS(vlessRaw);
 
-      // Android — нормализуем и используем RAW deeplink
+      // Android — нормализуем и используем RAW deeplink + Intent fallback
       const vlessAndroid = normalizeVlessForAndroid(vlessRaw);
-      btnAndroid.href = deepLinkAndroid(vlessAndroid);
+      const dpa = deepLinkAndroid(vlessAndroid);
+      const ila = intentLink(vlessAndroid);
 
-      // Fallback на Intent
-      btnAndroid.addEventListener('click', () => {
-        setTimeout(() => { try { window.location.href = intentLink(vlessAndroid); } catch(_) {} }, 600);
-      }, { passive: true });
+      btnAndroid.href = dpa;
+      btnAndroid.addEventListener('click', (e)=>{
+        e.preventDefault();
+        try{ window.location.href = dpa; }catch(_){}
+        setTimeout(()=>{ try{ window.location.href = ila; }catch(_){} }, 700);
+      }, { passive:true });
 
       // Копирование — нормализованный VLESS
       btnCopy.addEventListener('click', async ()=>{
