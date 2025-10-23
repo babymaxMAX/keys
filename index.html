@@ -100,80 +100,60 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    const deepLinkIOS = (vless)=>'v2raytun://import/'+encodeURIComponent(vless);
-    const configUrlFrom = (origin, id)=>`${origin}/config.html?id=${id}`;
-    const bridgeFromConfig = (configUrl)=>`https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
+    // Формирование ссылок синхронно — кнопки кликабельны сразу
+    const originUrl = location.origin;
+    const configUrl = `${originUrl}/config.html?id=${id}`;
+    const bridgeUrl = `https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
 
-    async function getVLESS(){
-      const r = await fetch('/sub?id='+id, { cache:'no-store' });
-      if(!r.ok) throw new Error('sub?id='+id+' not available');
-      return (await r.text()).trim();
-    }
+    // iOS/macOS: импорт по URL конфигурации (без ожиданий)
+    const iosDeep = `v2raytun://import/${encodeURIComponent(configUrl)}`;
+    const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
 
-    async function getConfigText(configUrl){
-      const r = await fetch(configUrl, { cache:'no-store' });
-      if(!r.ok) throw new Error('config not available');
-      return (await r.text()).trim();
-    }
+    // Назначаем href немедленно
+    btnIOS.href = iosDeep;
+    btnAndroid.href = bridgeUrl;
 
-    async function copyConfig(configUrl){
-      try{
-        const text = await getConfigText(configUrl);
-        await navigator.clipboard.writeText(text);
-        showToast('Ключ скопирован');
-      }catch(_){
+    // Клик iOS: прямой диплинк + fallback в App Store; in‑app — просим открыть в Safari
+    btnIOS.addEventListener('click',(e)=>{
+      if(isInApp){
+        e.preventDefault();
+        alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
+        return;
+      }
+      setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
+    },{passive:true});
+
+    // Клик Android: несколько попыток + резерв — копировать ключ
+    btnAndroid.addEventListener('click',(e)=>{
+      // даём перейти по href; параллельно — повторы
+      setTimeout(()=>{ try{ location.href = bridgeUrl; }catch(_){} }, 10);
+      setTimeout(()=>{
         try{
-          const text = await getConfigText(configUrl);
-          const ta = document.createElement('textarea');
-          ta.value = text; document.body.appendChild(ta);
-          ta.select(); document.execCommand('copy'); ta.remove();
-          showToast('Ключ скопирован');
-        }catch(__){}
-      }
-    }
+          const a=document.createElement('a'); a.href=bridgeUrl; a.style.display='none';
+          document.body.appendChild(a); a.click(); a.remove();
+        }catch(_){}
+      }, 180);
+      setTimeout(()=>{ window.open(bridgeUrl, '_blank', 'noopener'); }, 360);
+      setTimeout(()=>{ copyConfig(); }, 700);
+    },{passive:true});
 
-    async function init(){
-      // Сразу назначаем Android href (без ожиданий) — кнопка кликабельна мгновенно
-      const configUrl = configUrlFrom(location.origin, id);
-      const deeplinkUrl = bridgeFromConfig(configUrl);
-      btnAndroid.href = deeplinkUrl;
-      btnAndroid.addEventListener('click', (e)=>{
-        // НЕ блокируем жест пользователя: даём перейти, а параллельно делаем повторы
-        setTimeout(()=>{
-          try{ location.href = deeplinkUrl; }catch(_){}
-          setTimeout(()=>{
-            try{
-              const a=document.createElement('a'); a.href=deeplinkUrl; a.style.display='none';
-              document.body.appendChild(a); a.click(); a.remove();
-            }catch(_){}
-          }, 180);
-          setTimeout(()=>{ window.open(deeplinkUrl, '_blank', 'noopener'); }, 360);
-          setTimeout(()=>{ copyConfig(configUrl); }, 700);
-        }, 10);
-      }, { passive:true });
-
-      // iOS — когда получим ключ, проставим deep link
+    async function copyConfig(){
       try{
-        const vless = await getVLESS();
-        const linkIOS = deepLinkIOS(vless);
-        const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
-        btnIOS.href = linkIOS;
-        btnIOS.addEventListener('click',(e)=>{
-          if(isInApp){
-            e.preventDefault();
-            alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
-            return;
-          }
-          setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
-        }, { passive:true });
-      }catch(err){
-        // если ключ не получили — скрываем iOS кнопку
-        btnIOS.classList.add('hid');
-      }
-
-      // Копирование — берём текст из config.html (универсально)
-      btnCopy.addEventListener('click', ()=> copyConfig(configUrl));
+        const r = await fetch(configUrl, { cache:'no-store' });
+        if(!r.ok) throw new Error('cfg');
+        const text = (await r.text()).trim();
+        try{
+          await navigator.clipboard.writeText(text);
+        }catch{
+          const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy'); ta.remove();
+        }
+        showToast('Ключ скопирован');
+      }catch(_){}
     }
+
+    // Кнопка «Скопировать ключ»
+    btnCopy.addEventListener('click', copyConfig, { passive:true });
   </script>
 </body>
 </html>
