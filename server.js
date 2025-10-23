@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// ===== Загрузка ключей =====
+// 1) Загружаем ключи
 const KEYS_PATH = path.join(__dirname, 'keys.txt');
 let LIST = [];
 function loadKeys() {
@@ -23,7 +23,7 @@ function loadKeys() {
 }
 loadKeys();
 
-// ===== /sub?id=N — отдаём исходный VLESS (для совместимости) =====
+// 2) /sub?id=N — отдаём исходный VLESS (для совместимости)
 app.get('/sub', (req, res) => {
   const id = parseInt(req.query.id, 10);
   if (!Number.isFinite(id) || id < 1 || id > LIST.length) {
@@ -41,11 +41,12 @@ app.get('/sub', (req, res) => {
     .send(body);
 });
 
-// ===== Нормализация под Android/iOS для текстового config.html =====
+// 3) Нормализуем строку VLESS (Android любит spx=%2F, обязателен encryption=none)
 function normalizeVless(v) {
   if (!v) return v;
   let s = v.trim();
-  s = s.replace(/:(\d+)\/\?/, ':$1?'); // :port/? -> :port?
+  // :port/? -> :port?
+  s = s.replace(/:(\d+)\/\?/, ':$1?');
   const qIndex = s.indexOf('?');
   const hIndex = s.indexOf('#');
   const base = qIndex === -1 ? s : s.slice(0, qIndex);
@@ -53,8 +54,8 @@ function normalizeVless(v) {
   const hash = hIndex === -1 ? '' : s.slice(hIndex + 1);
 
   const params = new URLSearchParams(query);
-  if (!params.has('encryption')) params.set('encryption', 'none'); // критично
-  if (params.has('spx')) params.set('spx', '%2F'); // однократно кодированный '/'
+  if (!params.has('encryption')) params.set('encryption', 'none');
+  if (params.has('spx')) params.set('spx', '%2F'); // однократно закодированный '/'
 
   const fixedQuery = params.toString();
 
@@ -64,7 +65,7 @@ function normalizeVless(v) {
   return base + (fixedQuery ? '?' + fixedQuery : '') + (fixedHash ? '#' + fixedHash : '');
 }
 
-// ===== /config.html?id=N — ровно ОДНА строка VLESS (text/plain) =====
+// 4) /config.html?id=N — отдаем РОВНО одну строку VLESS (text/plain)
 app.get('/config.html', (req, res) => {
   const id = parseInt(req.query.id, 10);
   if (!Number.isFinite(id) || id < 1 || id > LIST.length) {
@@ -83,7 +84,7 @@ app.get('/config.html', (req, res) => {
     .send(body);
 });
 
-// ===== Статика =====
+// 5) Статика
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
 // Health
