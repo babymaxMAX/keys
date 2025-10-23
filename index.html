@@ -21,7 +21,7 @@
     .muted{color:var(--muted)}
     .grid2{display:grid;grid-template-columns:1fr;gap:12px}
     @media (min-width:640px){.grid2{grid-template-columns:1fr 1fr}}
-    .btn{-webkit-tap-highlight-color:rgba(0,0,0,0);appearance:none;border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:16px;letter-spacing:.2px;border-radius:14px;padding:14px 16px;min-height:54px;width:100%;color:#101015;transition:transform .08s ease,box-shadow .14s ease,filter .14s ease}
+    .btn{-webkit-tap-highlight-color:rgba(0,0,0,0);appearance:none;border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:16px;letter-spacing:.2px;border-radius:14px;padding:14px 16px;min-height:54px;width:100%;color:#101015;transition:transform .08s ease,box-shadow .14s ease,filter .14s ease;pointer-events:auto;position:relative;z-index:1}
     .btn:active{transform:translateY(1px) scale(.995)}
     .btn-primary{background:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 86%);box-shadow:0 14px 36px rgba(247,194,62,0.28),0 2px 0 rgba(255,255,255,0.18) inset}
     .btn-ghost{color:var(--text);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03));border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,0.35)}
@@ -100,41 +100,40 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // Формирование ссылок синхронно — кнопки кликабельны сразу
+    // Ссылки формируем СРАЗУ — без ожиданий/await => кнопки кликабельны мгновенно
     const originUrl = location.origin;
     const configUrl = `${originUrl}/config.html?id=${id}`;
     const bridgeUrl = `https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
 
-    // iOS/macOS: импорт по URL конфигурации (без ожиданий)
+    // iOS/macOS: импорт по URL конфигурации (надёжно в in-app Safari/Chrome)
     const iosDeep = `v2raytun://import/${encodeURIComponent(configUrl)}`;
     const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
 
-    // Назначаем href немедленно
     btnIOS.href = iosDeep;
     btnAndroid.href = bridgeUrl;
 
-    // Клик iOS: прямой диплинк + fallback в App Store; in‑app — просим открыть в Safari
+    // iOS: если страница открыта внутри мессенджера — подскажем открыть в Safari
     btnIOS.addEventListener('click',(e)=>{
       if(isInApp){
         e.preventDefault();
         alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
         return;
       }
+      // запасной переход в App Store, если приложение не установлено
       setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
     },{passive:true});
 
-    // Клик Android: несколько попыток + резерв — копировать ключ
-    btnAndroid.addEventListener('click',(e)=>{
-      // даём перейти по href; параллельно — повторы
-      setTimeout(()=>{ try{ location.href = bridgeUrl; }catch(_){} }, 10);
+    // Android: дадим перейти по href, параллельно усилим повторы + резерв — копирование
+    btnAndroid.addEventListener('click',()=>{
+      setTimeout(()=>{ try{ location.href = bridgeUrl; }catch(_){} }, 20);
       setTimeout(()=>{
         try{
           const a=document.createElement('a'); a.href=bridgeUrl; a.style.display='none';
           document.body.appendChild(a); a.click(); a.remove();
         }catch(_){}
-      }, 180);
-      setTimeout(()=>{ window.open(bridgeUrl, '_blank', 'noopener'); }, 360);
-      setTimeout(()=>{ copyConfig(); }, 700);
+      }, 200);
+      setTimeout(()=>{ window.open(bridgeUrl, '_blank', 'noopener'); }, 380);
+      setTimeout(()=>{ copyConfig(); }, 720);
     },{passive:true});
 
     async function copyConfig(){
@@ -152,7 +151,7 @@
       }catch(_){}
     }
 
-    // Кнопка «Скопировать ключ»
+    // «Скопировать ключ»
     btnCopy.addEventListener('click', copyConfig, { passive:true });
   </script>
 </body>
