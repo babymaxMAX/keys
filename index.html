@@ -59,8 +59,8 @@
 
       <div class="h2" style="margin-top:16px">2️⃣ Добавьте персональный ключ</div>
       <div class="grid2">
-        <a id="btnIOS" class="btn btn-primary" href="#">🚀 Подключить VPN iPhone / Mac</a>
-        <a id="btnAndroid" class="btn btn-ghost" href="#">⚡ Подключить VPN Android / Windows</a>
+        <a id="btnIOS" class="btn btn-primary" href="#" target="_self" rel="noopener">🚀 Подключить VPN iPhone / Mac</a>
+        <a id="btnAndroid" class="btn btn-ghost" href="#" target="_self" rel="noopener">⚡ Подключить VPN Android / Windows</a>
       </div>
 
       <div class="grid2" style="margin-top:12px">
@@ -100,10 +100,7 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // iOS deep link: весь VLESS кодируем целиком
     const deepLinkIOS = (vless)=>'v2raytun://import/'+encodeURIComponent(vless);
-
-    // Android: deeplink к текстовому конфигу
     const configUrlFrom = (origin, id)=>`${origin}/config.html?id=${id}`;
     const bridgeFromConfig = (configUrl)=>`https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
 
@@ -113,57 +110,68 @@
       return (await r.text()).trim();
     }
 
+    async function getConfigText(configUrl){
+      const r = await fetch(configUrl, { cache:'no-store' });
+      if(!r.ok) throw new Error('config not available');
+      return (await r.text()).trim();
+    }
+
     async function copyConfig(configUrl){
       try{
-        const t = await fetch(configUrl,{cache:'no-store'}).then(r=>r.text());
-        await navigator.clipboard.writeText(t.trim());
+        const text = await getConfigText(configUrl);
+        await navigator.clipboard.writeText(text);
         showToast('Ключ скопирован');
-      }catch(_){}
+      }catch(_){
+        try{
+          const text = await getConfigText(configUrl);
+          const ta = document.createElement('textarea');
+          ta.value = text; document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy'); ta.remove();
+          showToast('Ключ скопирован');
+        }catch(__){}
+      }
     }
 
     async function init(){
-      const vless = await getVLESS();
-
-      // iOS — прямой диплинк + fallback в App Store; если in-app — просим открыть в Safari
-      const linkIOS = deepLinkIOS(vless);
-      const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
-
-      btnIOS.href = linkIOS;
-      btnIOS.addEventListener('click',(e)=>{
-        if(isInApp){
-          e.preventDefault();
-          alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
-          return;
-        }
-        setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
-      }, { passive:true });
-
-      // Android / Windows — deeplink на текстовый конфиг через страницу‑мост
+      // Сразу назначаем Android href (без ожиданий) — кнопка кликабельна мгновенно
       const configUrl = configUrlFrom(location.origin, id);
       const deeplinkUrl = bridgeFromConfig(configUrl);
-
       btnAndroid.href = deeplinkUrl;
       btnAndroid.addEventListener('click', (e)=>{
-        e.preventDefault();
-        let step = 0;
-        const tryOpen = ()=>{
-          step++;
-          try{
-            if(step===1){ location.href = deeplinkUrl; }
-            else if(step===2){
+        // НЕ блокируем жест пользователя: даём перейти, а параллельно делаем повторы
+        setTimeout(()=>{
+          try{ location.href = deeplinkUrl; }catch(_){}
+          setTimeout(()=>{
+            try{
               const a=document.createElement('a'); a.href=deeplinkUrl; a.style.display='none';
               document.body.appendChild(a); a.click(); a.remove();
-            }else{
-              window.open(deeplinkUrl, '_blank', 'noopener');
-            }
-          }catch(_){}
-          if(step<3) setTimeout(tryOpen, 180);
-          else setTimeout(()=>copyConfig(configUrl), 300); // резерв: скопировать ключ
-        };
-        setTimeout(tryOpen, 60);
+            }catch(_){}
+          }, 180);
+          setTimeout(()=>{ window.open(deeplinkUrl, '_blank', 'noopener'); }, 360);
+          setTimeout(()=>{ copyConfig(configUrl); }, 700);
+        }, 10);
       }, { passive:true });
 
-      // Копирование ключа (из текстового конфига)
+      // iOS — когда получим ключ, проставим deep link
+      try{
+        const vless = await getVLESS();
+        const linkIOS = deepLinkIOS(vless);
+        const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
+        btnIOS.href = linkIOS;
+        btnIOS.addEventListener('click',(e)=>{
+          if(isInApp){
+            e.preventDefault();
+            alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
+            return;
+          }
+          setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
+        }, { passive:true });
+      }catch(err){
+        // если ключ не получили — скрываем iOS кнопку
+        btnIOS.classList.add('hid');
+      }
+
+      // Копирование — берём текст из config.html (универсально)
       btnCopy.addEventListener('click', ()=> copyConfig(configUrl));
     }
   </script>
