@@ -90,8 +90,6 @@
       btnIOS.classList.add('hid');
       btnAndroid.classList.add('hid');
       btnCopy.classList.add('hid');
-    } else {
-      init().catch(console.error);
     }
 
     function showToast(msg){
@@ -100,41 +98,57 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // Ссылки формируем СРАЗУ — без ожиданий/await => кнопки кликабельны мгновенно
+    // Единый deeplink через мост + резерв
     const originUrl = location.origin;
     const configUrl = `${originUrl}/config.html?id=${id}`;
     const bridgeUrl = `https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
-
-    // iOS/macOS: импорт по URL конфигурации (надёжно в in-app Safari/Chrome)
-    const iosDeep = `v2raytun://import/${encodeURIComponent(configUrl)}`;
     const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
 
-    btnIOS.href = iosDeep;
+    // Кнопки кликабельны сразу
+    btnIOS.href = bridgeUrl;
     btnAndroid.href = bridgeUrl;
 
-    // iOS: если страница открыта внутри мессенджера — подскажем открыть в Safari
+    function openDeeplink() {
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      function attempt() {
+        attempts++;
+        try {
+          if (attempts === 1) {
+            window.location.href = bridgeUrl;
+          } else if (attempts === 2) {
+            const a = document.createElement('a');
+            a.href = bridgeUrl; a.style.display = 'none';
+            document.body.appendChild(a); a.click(); a.remove();
+          } else {
+            window.open(bridgeUrl, '_blank', 'noopener');
+          }
+        } catch(_) {}
+
+        if (attempts >= maxAttempts) {
+          copyConfig();
+        } else {
+          setTimeout(attempt, 200);
+        }
+      }
+
+      setTimeout(attempt, 100);
+    }
+
     btnIOS.addEventListener('click',(e)=>{
-      if(isInApp){
+      if (isInApp) {
         e.preventDefault();
         alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
         return;
       }
-      // запасной переход в App Store, если приложение не установлено
+      openDeeplink();
       setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
-    },{passive:true});
+    }, { passive: false });
 
-    // Android: дадим перейти по href, параллельно усилим повторы + резерв — копирование
-    btnAndroid.addEventListener('click',()=>{
-      setTimeout(()=>{ try{ location.href = bridgeUrl; }catch(_){} }, 20);
-      setTimeout(()=>{
-        try{
-          const a=document.createElement('a'); a.href=bridgeUrl; a.style.display='none';
-          document.body.appendChild(a); a.click(); a.remove();
-        }catch(_){}
-      }, 200);
-      setTimeout(()=>{ window.open(bridgeUrl, '_blank', 'noopener'); }, 380);
-      setTimeout(()=>{ copyConfig(); }, 720);
-    },{passive:true});
+    btnAndroid.addEventListener('click', ()=>{
+      openDeeplink();
+    }, { passive: true });
 
     async function copyConfig(){
       try{
@@ -151,7 +165,6 @@
       }catch(_){}
     }
 
-    // «Скопировать ключ»
     btnCopy.addEventListener('click', copyConfig, { passive:true });
   </script>
 </body>
