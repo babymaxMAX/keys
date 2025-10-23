@@ -23,7 +23,7 @@ function loadKeys() {
 }
 loadKeys();
 
-// ===== Маршрут для iOS/общий: исходный VLESS =====
+// ===== /sub?id=N — отдаём исходный VLESS (для iOS) =====
 app.get('/sub', (req, res) => {
   const id = parseInt(req.query.id, 10);
   if (!Number.isFinite(id) || id < 1 || id > LIST.length) {
@@ -41,34 +41,26 @@ app.get('/sub', (req, res) => {
     .send(body);
 });
 
-// ===== Нормализация для Android (если нужно использовать как текст конфиг) =====
+// ===== Нормализация для Android (если в исходнике встречается "/:?" и т.п.) =====
 function normalizeVlessForAndroid(v) {
   if (!v) return v;
   let s = v.trim();
-
-  // :2053/? -> :2053?
-  s = s.replace(/:(\d+)\/\?/, ':$1?');
-
+  s = s.replace(/:(\d+)\/\?/, ':$1?');                        // :port/? -> :port?
   const qIndex = s.indexOf('?');
   const hIndex = s.indexOf('#');
   const base = qIndex === -1 ? s : s.slice(0, qIndex);
   const query = qIndex === -1 ? '' : (hIndex === -1 ? s.slice(qIndex + 1) : s.slice(qIndex + 1, hIndex));
   const hash = hIndex === -1 ? '' : s.slice(hIndex + 1);
-
   const params = new URLSearchParams(query);
-  if (!params.has('encryption')) params.set('encryption', 'none'); // критично
-  if (params.has('spx')) params.set('spx', '%2F'); // однократно кодированный '/'
-
+  if (!params.has('encryption')) params.set('encryption', 'none'); // критично для Android
+  if (params.has('spx')) params.set('spx', '%2F');                 // однократно кодированный '/'
   const fixedQuery = params.toString();
-
   let fixedHash = hash;
   if (fixedHash) { try { fixedHash = decodeURIComponent(fixedHash); } catch(_) {} }
-
   return base + (fixedQuery ? '?' + fixedQuery : '') + (fixedHash ? '#' + fixedHash : '');
 }
 
-// ===== Новый маршрут: текстовый конфиг для Android deeplink =====
-// /config.html?id=N -> text/plain (ровно одна строка VLESS, нормализованная)
+// ===== /config.html?id=N — текстовый конфиг для Android deeplink =====
 app.get('/config.html', (req, res) => {
   const id = parseInt(req.query.id, 10);
   if (!Number.isFinite(id) || id < 1 || id > LIST.length) {
@@ -87,7 +79,7 @@ app.get('/config.html', (req, res) => {
     .send(body);
 });
 
-// ===== Статика (index.html и т.п.) =====
+// ===== Статика =====
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
 // Health
