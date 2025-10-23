@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 1) Загружаем ключи
+// 1) Загружаем ключи из keys.txt
 const KEYS_PATH = path.join(__dirname, 'keys.txt');
 let LIST = [];
 function loadKeys() {
@@ -41,12 +41,13 @@ app.get('/sub', (req, res) => {
     .send(body);
 });
 
-// 3) Нормализуем строку VLESS (Android любит spx=%2F, обязателен encryption=none)
+// 3) Нормализуем строку VLESS (Android любит spx=/, обязателен encryption=none)
 function normalizeVless(v) {
   if (!v) return v;
   let s = v.trim();
   // :port/? -> :port?
   s = s.replace(/:(\d+)\/\?/, ':$1?');
+
   const qIndex = s.indexOf('?');
   const hIndex = s.indexOf('#');
   const base = qIndex === -1 ? s : s.slice(0, qIndex);
@@ -55,7 +56,7 @@ function normalizeVless(v) {
 
   const params = new URLSearchParams(query);
   if (!params.has('encryption')) params.set('encryption', 'none');
-  if (params.has('spx')) params.set('spx', '%2F'); // однократно закодированный '/'
+  if (params.has('spx')) params.set('spx', '/'); // '/' -> %2F при сериализации
 
   const fixedQuery = params.toString();
 
