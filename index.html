@@ -98,74 +98,72 @@
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // Единый deeplink через мост + резерв
     const originUrl = location.origin;
     const configUrl = `${originUrl}/config.html?id=${id}`;
-    const bridgeUrl = `https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
+
+    // 1) iOS/macOS — нативный deeplink схемой приложения
+    const iosDeep = `v2raytun://import/${encodeURIComponent(configUrl)}`;
     const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
 
-    // Кнопки кликабельны сразу
-    btnIOS.href = bridgeUrl;
-    btnAndroid.href = bridgeUrl;
+    // 2) Android — пробуем ту же схему, затем intent, затем универсальный мост
+    const androidDeep = `v2raytun://import/${encodeURIComponent(configUrl)}`;
+    const androidIntent = `intent://import/${encodeURIComponent(configUrl)}#Intent;scheme=v2raytun;package=com.v2raytun.android;end`;
+    const bridgeUrl = `https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
 
-    function openDeeplink() {
-      let attempts = 0;
-      const maxAttempts = 3;
+    // Префетчим ключ и держим в памяти для «синхронного» копирования по клику
+    let cachedKey = '';
+    fetch(configUrl, { cache:'no-store' })
+      .then(r => r.ok ? r.text() : '')
+      .then(t => { cachedKey = (t || '').trim(); })
+      .catch(()=>{});
 
-      function attempt() {
-        attempts++;
-        try {
-          if (attempts === 1) {
-            window.location.href = bridgeUrl;
-          } else if (attempts === 2) {
-            const a = document.createElement('a');
-            a.href = bridgeUrl; a.style.display = 'none';
-            document.body.appendChild(a); a.click(); a.remove();
-          } else {
-            window.open(bridgeUrl, '_blank', 'noopener');
-          }
-        } catch(_) {}
-
-        if (attempts >= maxAttempts) {
-          copyConfig();
-        } else {
-          setTimeout(attempt, 200);
-        }
-      }
-
-      setTimeout(attempt, 100);
+    function copySync() {
+      const text = cachedKey || '';
+      if (!text) return;
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      } catch(_) {}
+      // дублируем через современный API (если страница не ушла в фон)
+      navigator.clipboard?.writeText(text).catch(()=>{});
+      showToast('Ключ скопирован');
     }
 
+    btnCopy.addEventListener('click', copySync, { passive:true });
+
+    // iOS/macOS
+    btnIOS.href = iosDeep;
     btnIOS.addEventListener('click',(e)=>{
+      // сначала копируем синхронно — пока есть пользовательский жест
+      copySync();
+
       if (isInApp) {
         e.preventDefault();
         alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
         return;
       }
-      openDeeplink();
+      // после копирования — открываем приложение и на всякий случай App Store
+      setTimeout(()=>{ try{ location.href = iosDeep; }catch(_){} }, 20);
       setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
     }, { passive: false });
 
+    // Android
+    btnAndroid.href = androidDeep;
     btnAndroid.addEventListener('click', ()=>{
-      openDeeplink();
-    }, { passive: true });
+      // сначала копируем синхронно
+      copySync();
 
-    async function copyConfig(){
-      try{
-        const r = await fetch(configUrl, { cache:'no-store' });
-        if(!r.ok) throw new Error('cfg');
-        const text = (await r.text()).trim();
-        try{
-          await navigator.clipboard.writeText(text);
-        }catch{
-          const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
-          ta.select(); document.execCommand('copy'); ta.remove();
-        }
-        showToast('Ключ скопирован');
-      }catch(_){}
-    }
-
-    btnCopy.addEventListener('click', copyConfig, { passive:true });
-  </script>
-</body>
-</html>
+      // 1: прямая схема
+      setTimeout(()=>{ try{ location.href = androidDeep; }catch(_){} }, 20);
+      // 2: intent
+      setTimeout(()=>{ try{ location.href = androidIntent; }catch(_){} }, 220);
+      // 3: универсальный мост (если доступен в вашей сборке)
+      setTimeout(()=>{ try{ window.open(bridgeUrl, '_blank', 'noopener'); }catch(_){} }, 420);
+      // 4: открыть сам файл конфигурации — для ручного импорта
