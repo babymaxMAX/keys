@@ -101,16 +101,15 @@
     const originUrl = location.origin;
     const configUrl = `${originUrl}/config.html?id=${id}`;
 
-    // 1) iOS/macOS — нативный deeplink схемой приложения
+    // iOS/macOS
     const iosDeep = `v2raytun://import/${encodeURIComponent(configUrl)}`;
     const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
 
-    // 2) Android — пробуем ту же схему, затем intent, затем универсальный мост
+    // Android
     const androidDeep = `v2raytun://import/${encodeURIComponent(configUrl)}`;
     const androidIntent = `intent://import/${encodeURIComponent(configUrl)}#Intent;scheme=v2raytun;package=com.v2raytun.android;end`;
-    const bridgeUrl = `https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
 
-    // Префетчим ключ и держим в памяти для «синхронного» копирования по клику
+    // Cache ключа для синхронного копирования
     let cachedKey = '';
     fetch(configUrl, { cache:'no-store' })
       .then(r => r.ok ? r.text() : '')
@@ -131,7 +130,6 @@
         document.execCommand('copy');
         ta.remove();
       } catch(_) {}
-      // дублируем через современный API (если страница не ушла в фон)
       navigator.clipboard?.writeText(text).catch(()=>{});
       showToast('Ключ скопирован');
     }
@@ -141,15 +139,12 @@
     // iOS/macOS
     btnIOS.href = iosDeep;
     btnIOS.addEventListener('click',(e)=>{
-      // сначала копируем синхронно — пока есть пользовательский жест
       copySync();
-
       if (isInApp) {
         e.preventDefault();
         alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
         return;
       }
-      // после копирования — открываем приложение и на всякий случай App Store
       setTimeout(()=>{ try{ location.href = iosDeep; }catch(_){} }, 20);
       setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
     }, { passive: false });
@@ -157,13 +152,11 @@
     // Android
     btnAndroid.href = androidDeep;
     btnAndroid.addEventListener('click', ()=>{
-      // сначала копируем синхронно
       copySync();
-
-      // 1: прямая схема
       setTimeout(()=>{ try{ location.href = androidDeep; }catch(_){} }, 20);
-      // 2: intent
       setTimeout(()=>{ try{ location.href = androidIntent; }catch(_){} }, 220);
-      // 3: универсальный мост (если доступен в вашей сборке)
-      setTimeout(()=>{ try{ window.open(bridgeUrl, '_blank', 'noopener'); }catch(_){} }, 420);
-      // 4: открыть сам файл конфигурации — для ручного импорта
+      setTimeout(()=>{ try{ window.open(configUrl, '_blank', 'noopener'); }catch(_){} }, 820);
+    }, { passive:true });
+  </script>
+</body>
+</html>
