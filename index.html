@@ -75,6 +75,9 @@
   <div id="toast" class="toast">Скопировано</div>
 
   <script>
+    const ua = navigator.userAgent || "";
+    const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Line|VKClient|Telegram/i.test(ua);
+
     const qs = new URLSearchParams(location.search);
     const id = parseInt(qs.get('id'), 10);
 
@@ -91,31 +94,23 @@
       init().catch(console.error);
     }
 
-    async function ensureSW(){
-      if(!('serviceWorker' in navigator)) return;
-      try{
-        await navigator.serviceWorker.register('/sw.js',{scope:'/'});
-        if(!navigator.serviceWorker.controller) await new Promise(r=>setTimeout(r,120));
-      }catch(_){}
-    }
-
     function showToast(msg){
       toast.textContent = msg;
       toast.classList.add('show');
       setTimeout(()=>toast.classList.remove('show'), 1300);
     }
 
-    // iOS/macOS — кодируем всю строку целиком
-    const deepLinkIOS = (vless) => 'v2raytun://import/' + encodeURIComponent(vless);
+    // iOS deep link: весь VLESS кодируем целиком
+    const deepLinkIOS = (vless)=>'v2raytun://import/'+encodeURIComponent(vless);
 
-    // Deeplink-страница (мост) как в рабочем варианте
-    const makeConfigUrl = (origin, id) => `${origin}/config.html?id=${id}`;
-    const makeDeeplinkBridge = (configUrl) => `https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
+    // Android: deeplink к текстовому конфигу
+    const configUrlFrom = (origin, id)=>`${origin}/config.html?id=${id}`;
+    const bridgeFromConfig = (configUrl)=>`https://deeplink.website/?url=${encodeURIComponent(configUrl)}`;
 
     async function getVLESS(){
       const r = await fetch('/sub?id='+id, { cache:'no-store' });
       if(!r.ok) throw new Error('sub?id='+id+' not available');
-      return (await r.text()).trim(); // одна строка vless://...
+      return (await r.text()).trim();
     }
 
     async function copyConfig(configUrl){
@@ -127,16 +122,25 @@
     }
 
     async function init(){
-      await ensureSW();
+      const vless = await getVLESS();
 
-      const vlessRaw = await getVLESS();
+      // iOS — прямой диплинк + fallback в App Store; если in-app — просим открыть в Safari
+      const linkIOS = deepLinkIOS(vless);
+      const appStore = 'https://apps.apple.com/ru/app/v2raytun/id6476628951';
 
-      // iOS — без изменений
-      btnIOS.href = deepLinkIOS(vlessRaw);
+      btnIOS.href = linkIOS;
+      btnIOS.addEventListener('click',(e)=>{
+        if(isInApp){
+          e.preventDefault();
+          alert('Откройте страницу в Safari: нажмите ••• или Aa → «Открыть в Safari», затем снова нажмите кнопку.');
+          return;
+        }
+        setTimeout(()=>{ try{ location.href = appStore; }catch(_){} }, 900);
+      }, { passive:true });
 
-      // Android/Windows — deeplink к нашей config.html?id=N через страницу‑мост
-      const configUrl = makeConfigUrl(location.origin, id);
-      const deeplinkUrl = makeDeeplinkBridge(configUrl);
+      // Android / Windows — deeplink на текстовый конфиг через страницу‑мост
+      const configUrl = configUrlFrom(location.origin, id);
+      const deeplinkUrl = bridgeFromConfig(configUrl);
 
       btnAndroid.href = deeplinkUrl;
       btnAndroid.addEventListener('click', (e)=>{
@@ -159,16 +163,8 @@
         setTimeout(tryOpen, 60);
       }, { passive:true });
 
-      // Копирование — сырой ключ
-      btnCopy.addEventListener('click', async ()=>{
-        try{
-          await navigator.clipboard.writeText(vlessRaw);
-          showToast('Ключ скопирован');
-        }catch{
-          const ta=document.createElement('textarea'); ta.value=vlessRaw; document.body.appendChild(ta);
-          ta.select(); document.execCommand('copy'); ta.remove(); showToast('Ключ скопирован');
-        }
-      });
+      // Копирование ключа (из текстового конфига)
+      btnCopy.addEventListener('click', ()=> copyConfig(configUrl));
     }
   </script>
 </body>
