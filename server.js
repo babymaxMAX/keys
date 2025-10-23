@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 1) Загружаем ключи из keys.txt
+// 1) Загружаем ключи
 const KEYS_PATH = path.join(__dirname, 'keys.txt');
 let LIST = [];
 function loadKeys() {
@@ -23,30 +23,29 @@ function loadKeys() {
 }
 loadKeys();
 
-// 2) /sub?id=N — отдаём исходный VLESS (для совместимости)
+// Общие заголовки для текстовых ответов
+function setCommon(res) {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Cache-Control', 'no-store');
+  res.set('Content-Type', 'text/plain; charset=utf-8');
+}
+
+// 2) /sub?id=N — отдаём исходный VLESS как есть (совместимость)
 app.get('/sub', (req, res) => {
   const id = parseInt(req.query.id, 10);
   if (!Number.isFinite(id) || id < 1 || id > LIST.length) {
-    return res
-      .status(400)
-      .set('Content-Type', 'text/plain; charset=utf-8')
-      .set('Cache-Control', 'no-store')
-      .send('invalid id\n');
+    setCommon(res);
+    return res.status(400).send('invalid id\n');
   }
-  const body = (LIST[id - 1] || '').trim() + '\n';
-  res
-    .status(200)
-    .set('Content-Type', 'text/plain; charset=utf-8')
-    .set('Cache-Control', 'no-store')
-    .send(body);
+  setCommon(res);
+  res.status(200).send((LIST[id - 1] || '').trim() + '\n');
 });
 
-// 3) Нормализуем строку VLESS (Android любит spx=/, обязателен encryption=none)
+// 3) Нормализация для Android/iOS (spx=/, encryption=none, убираем '/?' после порта)
 function normalizeVless(v) {
   if (!v) return v;
   let s = v.trim();
-  // :port/? -> :port?
-  s = s.replace(/:(\d+)\/\?/, ':$1?');
+  s = s.replace(/:(\d+)\/\?/, ':$1?'); // :port/? -> :port?
 
   const qIndex = s.indexOf('?');
   const hIndex = s.indexOf('#');
@@ -56,7 +55,7 @@ function normalizeVless(v) {
 
   const params = new URLSearchParams(query);
   if (!params.has('encryption')) params.set('encryption', 'none');
-  if (params.has('spx')) params.set('spx', '/'); // '/' -> %2F при сериализации
+  if (params.has('spx')) params.set('spx', '/'); else params.set('spx', '/'); // сериализуется в %2F
 
   const fixedQuery = params.toString();
 
@@ -66,26 +65,20 @@ function normalizeVless(v) {
   return base + (fixedQuery ? '?' + fixedQuery : '') + (fixedHash ? '#' + fixedHash : '');
 }
 
-// 4) /config.html?id=N — отдаем РОВНО одну строку VLESS (text/plain)
+// 4) /config.html?id=N — отдаём РОВНО одну строку VLESS (text/plain)
 app.get('/config.html', (req, res) => {
   const id = parseInt(req.query.id, 10);
   if (!Number.isFinite(id) || id < 1 || id > LIST.length) {
-    return res
-      .status(400)
-      .set('Content-Type', 'text/plain; charset=utf-8')
-      .set('Cache-Control', 'no-store')
-      .send('invalid id\n');
+    setCommon(res);
+    return res.status(400).send('invalid id\n');
   }
   const raw = (LIST[id - 1] || '').trim();
   const body = normalizeVless(raw) + '\n';
-  res
-    .status(200)
-    .set('Content-Type', 'text/plain; charset=utf-8')
-    .set('Cache-Control', 'no-store')
-    .send(body);
+  setCommon(res);
+  res.status(200).send(body);
 });
 
-// 5) Статика
+// 5) Статика — отдаём index.html и прочее
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
 // Health
